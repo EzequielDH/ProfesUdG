@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Construir Horario — ProfesUdG</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css">
+
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/horario.css">
+</head>
+
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">
+        <span class="logo-mark"><i class="ti ti-school"></i></span>
+        ProfesUdG
+      </a>
+      <button class="nav-hamburger" aria-label="Menú" onclick="this.closest('.nav').classList.toggle('nav-open')">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links">
+        <a href="/construir-horario" class="nav-link nav-active">Construir horario</a>
+        <a href="/#profes" class="nav-link">Profesores</a>
+        <a href="/#acerca" class="nav-link">Acerca de</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Page Header -->
+  <section class="tool-header">
+    <div class="tool-header-inner">
+      <h1 class="tool-title">Construye tu horario <span class="accent">óptimo</span></h1>
+      <p class="tool-sub">
+        Combina tus materias sin conflictos de horario usando el historial real
+        de saturación de profesores de los últimos ciclos.
+      </p>
+    </div>
+  </section>
+
+  <!-- Main Tool Layout -->
+  <main class="tool-main">
+
+    <!-- PARAMS PANEL -->
+    <aside class="tool-params">
+      <h2 class="params-title">
+        <i class="ti ti-adjustments-horizontal"></i> Parámetros
+      </h2>
+
+      <div class="form-group">
+        <label class="form-label" for="centroSelect">Centro Universitario</label>
+        <select id="centroSelect" class="form-control">
+          <!-- Populated by JS -->
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="clavesInput">
+          Claves de materias
+          <span class="label-hint">(separadas por coma)</span>
+        </label>
+        <input type="text" id="clavesInput" class="form-control" placeholder="Ej: I9900, I9903, I9905, I9908">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="promedioInput">Tu promedio general</label>
+        <div class="number-input-wrap">
+          <input type="number" id="promedioInput" class="form-control" min="60" max="100" value="85" step="0.5">
+          <span class="number-suffix">/ 100</span>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="form-group">
+        <label class="form-label">Turno preferido</label>
+        <div class="radio-group">
+          <label class="radio-option">
+            <input type="radio" name="turno" value="Libre" checked> Libre
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="turno" value="Matutino"> Matutino
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="turno" value="Vespertino"> Vespertino
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="estrategiaSelect">Estrategia de optimización</label>
+        <select id="estrategiaSelect" class="form-control">
+          <option value="Con los mejores profesores">Con los mejores profesores</option>
+          <option value="Seguro por promedio">Seguro por promedio</option>
+          <option value="Menos horas libres">Menos horas libres</option>
+          <option value="Día libre">Día libre</option>
+        </select>
+      </div>
+
+      <button id="optimizarBtn" class="optimize-btn">
+        <i class="ti ti-sparkles"></i>
+        Optimizar
+      </button>
+
+      <div id="apiStatus" style="display:none;"></div>
+    </aside>
+
+    <!-- RESULTS PANEL -->
+    <section class="tool-results">
+      <div class="results-placeholder" id="resultsPlaceholder">
+        <i class="ti ti-calendar-stats"></i>
+        <p>Configura los parámetros y presiona <strong>Optimizar</strong></p>
+      </div>
+      <div id="resultsContent" style="display:none;"></div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="trust">
+      <span><i class="ti ti-chart-bar"></i> Probabilidades basadas en datos reales de SIIAU</span>
+      <span class="trust-sep">·</span>
+      <span><i class="ti ti-calendar-check"></i> Hasta 3 horarios óptimos sin choques</span>
+      <span class="trust-sep">·</span>
+      <span><i class="ti ti-refresh"></i> Datos actualizados cada ciclo</span>
+    </div>
+    <div class="footer-credits">
+      <span>Hecho por</span>
+      <a href="https://github.com/EzequielDH" target="_blank" rel="noopener"><i class="ti ti-brand-github"></i>
+        EzequielDH</a>
+      <span class="trust-sep">·</span>
+      <a href="https://www.linkedin.com/in/ezequiel-dh-b9a673288" target="_blank" rel="noopener"><i
+          class="ti ti-brand-linkedin"></i> Ezequiel DH</a>
+    </div>
+  </footer>
+
+  <!-- Professor mini-modal -->
+  <div class="prof-modal-overlay" id="profModal" onclick="if(event.target===this)closeProfModal()">
+    <div class="prof-modal">
+      <button class="prof-modal-close" onclick="closeProfModal()"><i class="ti ti-x"></i></button>
+      <div id="profModalBody"></div>
+    </div>
+  </div>
+
+  <!-- Support Floating Button -->
+  <button class="support-fab" onclick="openSupportModal()">
+    <i class="ti ti-help-circle"></i> Reportar problema
+  </button>
+
+  <!-- Support Request Modal -->
+  <div class="support-overlay" id="supportOverlay" onclick="if(event.target===this)closeSupportModal()">
+    <div class="support-modal">
+      <button class="support-modal-close" onclick="closeSupportModal()"><i class="ti ti-x"></i></button>
+      <h3><i class="ti ti-ticket" style="color:var(--blue-600);margin-right:6px;"></i>Reportar problema</h3>
+      <p>Cuéntanos qué falla o qué mejorarías. Puedes adjuntar una captura de pantalla.</p>
+      <label class="support-label" for="supDescripcion">Descripción *</label>
+      <textarea class="support-input" id="supDescripcion"
+        placeholder="Describe el problema con el mayor detalle posible…" maxlength="2000"></textarea>
+      <label class="support-label" for="supEmail">Tu correo (opcional)</label>
+      <input type="email" class="support-input" id="supEmail" placeholder="para que te avisemos cuando se resuelva">
+      <label class="support-file-label">
+        <i class="ti ti-photo"></i>
+        <span id="supFotoLabel">Adjuntar captura (opcional)</span>
+        <input type="file" id="supFoto" accept="image/*"
+          onchange="document.getElementById('supFotoLabel').textContent=this.files[0]?.name||'Adjuntar captura (opcional)'">
+      </label>
+      <div id="supError" style="display:none;color:#991B1B;font-size:12px;margin-bottom:12px;"></div>
+      <div id="supOk" style="display:none;text-align:center;padding:16px 0;">
+        <i class="ti ti-circle-check-filled" style="font-size:36px;color:var(--teal-600);display:block;margin-bottom:8px;"></i>
+        <strong style="color:var(--teal-900);">¡Reporte enviado!</strong>
+        <p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">Gracias por ayudarnos a mejorar.</p>
+      </div>
+      <button class="support-submit" id="supBtn" onclick="submitSupport()">
+        <i class="ti ti-send"></i> Enviar reporte
+      </button>
+    </div>
+  </div>
+
+  <script src="js/horario.js"></script>
+  <script>
+    fetch('/api/visita', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page: 'horario' }) }).catch(() => {});
+    function openSupportModal() {
+      const ov = document.getElementById('supportOverlay');
+      document.getElementById('supDescripcion').value = '';
+      document.getElementById('supEmail').value = '';
+      document.getElementById('supFoto').value = '';
+      document.getElementById('supFotoLabel').textContent = 'Adjuntar captura (opcional)';
+      document.getElementById('supError').style.display = 'none';
+      document.getElementById('supOk').style.display = 'none';
+      const btn = document.getElementById('supBtn');
+      btn.style.display = ''; btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-send"></i> Enviar reporte';
+      ov.style.display = 'flex';
+      requestAnimationFrame(() => ov.classList.add('show'));
+    }
+    function closeSupportModal() {
+      const ov = document.getElementById('supportOverlay');
+      ov.classList.remove('show');
+      setTimeout(() => { ov.style.display = 'none'; }, 300);
+    }
+    async function submitSupport() {
+      const desc = document.getElementById('supDescripcion').value.trim();
+      const errDiv = document.getElementById('supError');
+      if (!desc) { errDiv.textContent = 'La descripción es obligatoria.'; errDiv.style.display = 'block'; return; }
+      errDiv.style.display = 'none';
+      const btn = document.getElementById('supBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ti ti-loader" style="animation:spin 1s linear infinite"></i> Enviando…';
+      const fd = new FormData();
+      fd.append('descripcion', desc);
+      const email = document.getElementById('supEmail').value.trim();
+      if (email) fd.append('email', email);
+      const foto = document.getElementById('supFoto').files[0];
+      if (foto) fd.append('foto', foto);
+      try {
+        const r = await fetch('/api/soporte', { method: 'POST', body: fd }).then(r => r.json());
+        if (r.success) { document.getElementById('supOk').style.display = 'block'; btn.style.display = 'none'; }
+        else { errDiv.textContent = r.error || 'Error al enviar.'; errDiv.style.display = 'block'; btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Enviar reporte'; }
+      } catch {
+        errDiv.textContent = 'Error de conexión.'; errDiv.style.display = 'block';
+        btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Enviar reporte';
+      }
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Admin · ProfesUdG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f0f4f8; color: #0a0a0a; min-height: 100vh; }
+
+    /* Sidebar Layout */
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: 220px; background: #042C53; padding: 24px 0;
+      display: flex; flex-direction: column;
+      z-index: 100;
+    }
+    .sidebar-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 17px; font-weight: 700; color: white;
+      padding: 0 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.10);
+    }
+    .sidebar-logo i { color: #6EB7F5; font-size: 20px; }
+    .sidebar-badge {
+      font-size: 10px; font-weight: 700; background: #185FA5;
+      color: white; padding: 2px 7px; border-radius: 999px; margin-left: auto;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 20px; font-size: 13px; font-weight: 500;
+      color: rgba(255,255,255,0.65); cursor: pointer;
+      border: none; background: none; width: 100%; text-align: left;
+      transition: all 0.15s; border-left: 3px solid transparent;
+    }
+    .nav-item:hover { color: white; background: rgba(255,255,255,0.07); }
+    .nav-item.active { color: white; background: rgba(255,255,255,0.10); border-left-color: #6EB7F5; }
+    .nav-item i { font-size: 18px; }
+    .sidebar-footer {
+      margin-top: auto; padding: 20px;
+      border-top: 1px solid rgba(255,255,255,0.10);
+    }
+    .logout-btn {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: rgba(255,255,255,0.5);
+      cursor: pointer; text-decoration: none;
+      transition: color 0.15s;
+    }
+    .logout-btn:hover { color: white; }
+
+    /* Main Content */
+    .main { margin-left: 220px; padding: 32px; min-height: 100vh; }
+    .page-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 28px;
+    }
+    .page-title { font-size: 22px; font-weight: 700; color: #042C53; }
+    .page-sub { font-size: 13px; color: #737373; margin-top: 3px; }
+    .tab { display: none; }
+    .tab.active { display: block; }
+
+    /* Stat Cards */
+    .stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 28px; }
+    .stat-card {
+      background: white; border-radius: 12px; padding: 20px;
+      border-top: 3px solid; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .stat-card.blue  { border-color: #185FA5; }
+    .stat-card.teal  { border-color: #0F6E56; }
+    .stat-card.amber { border-color: #854F0B; }
+    .stat-card.coral { border-color: #993C1D; }
+    .stat-num { font-size: 32px; font-weight: 700; color: #042C53; line-height: 1; }
+    .stat-lbl { font-size: 12px; color: #737373; margin-top: 6px; font-weight: 500; }
+    .stat-icon { font-size: 28px; float: right; opacity: 0.18; margin-top: -4px; }
+    .stat-card.blue  .stat-icon { color: #185FA5; }
+    .stat-card.teal  .stat-icon { color: #0F6E56; }
+    .stat-card.amber .stat-icon { color: #854F0B; }
+    .stat-card.coral .stat-icon { color: #993C1D; }
+
+    /* Filters Bar */
+    .filters-bar {
+      display: flex; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 18px; align-items: center;
+    }
+    .filters-bar input, .filters-bar select {
+      padding: 8px 12px; border: 1px solid #e5e5e5;
+      border-radius: 8px; font-size: 13px; font-family: inherit;
+      color: #0a0a0a; background: white;
+    }
+    .filters-bar input:focus, .filters-bar select:focus {
+      outline: none; border-color: #185FA5;
+    }
+    .filters-bar input { flex: 1; min-width: 180px; }
+
+    /* Table Styling */
+    .table-wrap {
+      background: white; border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      background: #f8fafc; text-align: left;
+      padding: 11px 14px; font-size: 11px;
+      font-weight: 600; color: #525252;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      border-bottom: 1px solid #e5e5e5;
+    }
+    tbody td {
+      padding: 12px 14px; border-bottom: 1px solid #f0f0f0;
+      vertical-align: top;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #fafcff; }
+    .text-cell { max-width: 240px; line-height: 1.5; }
+    .censored-row td { opacity: 0.5; }
+
+    /* Badge Styling */
+    .badge-v { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+    .badge-v.verified  { background: #E1F5EE; color: #0F6E56; }
+    .badge-v.unverified { background: #f0f0f0; color: #737373; }
+    .badge-v.censored  { background: #FEF2F2; color: #991B1B; }
+    .badge-v.pending   { background: #FEF9EE; color: #854F0B; }
+    .badge-v.resolved  { background: #E1F5EE; color: #0F6E56; }
+
+    /* Action Buttons */
+    .action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+    .btn-sm {
+      padding: 5px 10px; border-radius: 6px; font-size: 11px;
+      font-weight: 600; cursor: pointer; border: none;
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: inherit; transition: opacity 0.15s;
+    }
+    .btn-sm:hover { opacity: 0.8; }
+    .btn-edit    { background: #E6F1FB; color: #185FA5; }
+    .btn-delete  { background: #FEF2F2; color: #991B1B; }
+    .btn-censor  { background: #FEF9EE; color: #854F0B; }
+    .btn-resolve { background: #E1F5EE; color: #0F6E56; }
+
+    /* Pagination */
+    .pagination {
+      display: flex; align-items: center; gap: 6px;
+      justify-content: center; padding: 20px;
+    }
+    .page-btn {
+      padding: 6px 12px; border: 1px solid #e5e5e5;
+      border-radius: 6px; font-size: 12px; cursor: pointer;
+      background: white; font-family: inherit;
+      transition: all 0.15s;
+    }
+    .page-btn:hover { background: #E6F1FB; border-color: #185FA5; color: #185FA5; }
+    .page-btn.cur   { background: #185FA5; color: white; border-color: #185FA5; }
+    .page-info { font-size: 12px; color: #737373; margin: 0 8px; }
+
+    /* Ticket Cards */
+    .ticket-card {
+      background: white; border-radius: 12px; padding: 18px 20px;
+      margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      border-left: 4px solid #185FA5;
+    }
+    .ticket-card.resolved { border-left-color: #0F6E56; opacity: 0.7; }
+    .ticket-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .ticket-meta { font-size: 11px; color: #737373; display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+    .ticket-desc { font-size: 13px; line-height: 1.6; color: #262626; white-space: pre-wrap; }
+    .ticket-img { margin-top: 12px; }
+    .ticket-img img {
+      max-width: 320px; max-height: 200px; border-radius: 8px;
+      border: 1px solid #e5e5e5; cursor: pointer;
+    }
+
+    /* Edit Modal */
+    .edit-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(4,44,83,0.55); z-index: 300;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .edit-overlay.show { display: flex; }
+    .edit-modal {
+      background: white; border-radius: 14px;
+      padding: 28px; width: 100%; max-width: 500px;
+      border-top: 4px solid #185FA5;
+    }
+    .edit-modal h3 { font-size: 16px; color: #042C53; margin-bottom: 16px; }
+    .edit-modal textarea {
+      width: 100%; border: 1px solid #e5e5e5; border-radius: 8px;
+      padding: 10px 12px; font-size: 13px; font-family: inherit;
+      line-height: 1.6; resize: vertical; min-height: 120px;
+    }
+    .edit-modal textarea:focus { outline: none; border-color: #185FA5; }
+    .edit-modal label { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-top: 12px; cursor: pointer; }
+    .edit-modal-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+    .btn-cancel {
+      padding: 8px 18px; border: 1px solid #e5e5e5; border-radius: 8px;
+      background: white; cursor: pointer; font-size: 13px; font-family: inherit;
+    }
+    .btn-save {
+      padding: 8px 18px; background: #185FA5; color: white;
+      border: none; border-radius: 8px; cursor: pointer;
+      font-size: 13px; font-weight: 600; font-family: inherit;
+    }
+    .btn-save:hover { background: #0C447C; }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center; padding: 60px 20px;
+      color: #a3a3a3; font-size: 14px;
+    }
+    .empty-state i { font-size: 40px; display: block; margin-bottom: 12px; }
+
+    /* Visit Tabs */
+    .visit-tab {
+      padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;
+      border: 1px solid #e5e5e5; background: white; cursor: pointer;
+      font-family: inherit; color: #525252; transition: all 0.15s;
+    }
+    .visit-tab:hover { border-color: #185FA5; color: #185FA5; }
+    .visit-tab.active { background: #185FA5; color: white; border-color: #185FA5; }
+
+    /* Visit Progress Bar */
+    .visit-bar-bg { height: 6px; background: #EEF3F8; border-radius: 3px; overflow: hidden; }
+    .visit-bar { height: 100%; background: #185FA5; border-radius: 3px; }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #042C53; color: white;
+      padding: 10px 20px; border-radius: 10px;
+      font-size: 13px; z-index: 999;
+      display: flex; align-items: center; gap: 8px;
+      transition: transform 0.3s; pointer-events: none;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; }
+      .sidebar-logo span, .sidebar-badge, .nav-item span, .logout-btn span { display: none; }
+      .nav-item { justify-content: center; padding: 14px; }
+      .main { margin-left: 60px; padding: 20px; }
+      .stat-grid { grid-template-columns: repeat(2,1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <i class="ti ti-school"></i>
+    <span>ProfesUdG</span>
+    <span class="sidebar-badge">ADMIN</span>
+  </div>
+
+  <button class="nav-item active" onclick="switchTab('dashboard')">
+    <i class="ti ti-layout-dashboard"></i>
+    <span>Dashboard</span>
+  </button>
+  <button class="nav-item" onclick="switchTab('reviews')">
+    <i class="ti ti-message-circle"></i>
+    <span>Reseñas</span>
+  </button>
+  <button class="nav-item" onclick="switchTab('tickets')">
+    <i class="ti ti-ticket"></i>
+    <span>Soporte</span>
+  </button>
+
+  <div class="sidebar-footer">
+    <a href="/admin/logout" class="logout-btn">
+      <i class="ti ti-logout"></i>
+      <span>Cerrar sesión</span>
+    </a>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="main">
+
+  <!-- Dashboard Tab -->
+  <div class="tab active" id="tab-dashboard">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub">Resumen general de ProfesUdG</div>
+      </div>
+      <button class="btn-sm btn-edit" onclick="loadStats()" style="font-size:12px;padding:8px 14px;">
+        <i class="ti ti-refresh"></i> Actualizar
+      </button>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card blue">
+        <i class="ti ti-message-circle stat-icon"></i>
+        <div class="stat-num" id="statTotal">—</div>
+        <div class="stat-lbl">Total reseñas</div>
+      </div>
+      <div class="stat-card teal">
+        <i class="ti ti-circle-check stat-icon"></i>
+        <div class="stat-num" id="statVerif">—</div>
+        <div class="stat-lbl">Verificadas @UdG</div>
+      </div>
+      <div class="stat-card amber">
+        <i class="ti ti-ticket stat-icon"></i>
+        <div class="stat-num" id="statTickets">—</div>
+        <div class="stat-lbl">Tickets pendientes</div>
+      </div>
+      <div class="stat-card coral">
+        <i class="ti ti-eye-off stat-icon"></i>
+        <div class="stat-num" id="statCensored">—</div>
+        <div class="stat-lbl">Reseñas censuradas</div>
+      </div>
+    </div>
+
+    <!-- Visit metrics -->
+    <div class="table-wrap" style="overflow:visible;">
+      <div style="padding:20px 20px 0;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:15px;font-weight:700;color:#042C53;display:flex;align-items:center;gap:8px;">
+          <i class="ti ti-chart-line" style="color:#185FA5;font-size:20px;"></i>
+          Visitas al sitio
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="visit-tab active" onclick="setVisitTab('hoy',this)">Hoy</button>
+          <button class="visit-tab" onclick="setVisitTab('semana',this)">Semana</button>
+          <button class="visit-tab" onclick="setVisitTab('mes',this)">Mes</button>
+          <button class="visit-tab" id="cicloTabBtn" onclick="setVisitTab('ciclo',this)">Ciclo</button>
+        </div>
+      </div>
+
+      <!-- Big number -->
+      <div style="padding:16px 20px 0;display:flex;align-items:baseline;gap:12px;">
+        <div style="font-size:52px;font-weight:800;color:#185FA5;line-height:1;" id="visitBig">—</div>
+        <div style="font-size:13px;color:#737373;" id="visitBigLabel">visitas hoy</div>
+        <div style="font-size:13px;color:#a3a3a3;margin-left:auto;" id="visitTotal"></div>
+      </div>
+
+      <!-- Sub-counts bar -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;padding:16px 20px;border-bottom:1px solid #f0f0f0;" id="visitSubCounts">
+        <div style="text-align:center;padding:10px;">
+          <div style="font-size:22px;font-weight:700;color:#042C53;" id="subHoy">—</div>
+          <div style="font-size:11px;color:#737373;margin-top:2px;">Hoy</div>
+        </div>
+        <div style="text-align:center;padding:10px;border-left:1px solid #f0f0f0;">
+          <div style="font-size:22px;font-weight:700;color:#042C53;" id="subSemana">—</div>
+          <div style="font-size:11px;color:#737373;margin-top:2px;">Semana</div>
+        </div>
+        <div style="text-align:center;padding:10px;border-left:1px solid #f0f0f0;">
+          <div style="font-size:22px;font-weight:700;color:#042C53;" id="subMes">—</div>
+          <div style="font-size:11px;color:#737373;margin-top:2px;">Mes</div>
+        </div>
+        <div style="text-align:center;padding:10px;border-left:1px solid #f0f0f0;">
+          <div style="font-size:22px;font-weight:700;color:#042C53;" id="subCiclo">—</div>
+          <div style="font-size:11px;color:#737373;margin-top:2px;" id="subCicloLbl">Ciclo</div>
+        </div>
+      </div>
+
+      <!-- Day-by-day table -->
+      <div style="padding:16px 20px 20px;" id="visitTableWrap">
+        <div style="font-size:12px;font-weight:600;color:#737373;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">
+          Últimos 30 días
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;" id="visitTable">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:7px 10px;background:#f8fafc;font-size:11px;font-weight:600;color:#525252;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #e5e5e5;">Fecha</th>
+              <th style="text-align:right;padding:7px 10px;background:#f8fafc;font-size:11px;font-weight:600;color:#185FA5;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #e5e5e5;">Inicio</th>
+              <th style="text-align:right;padding:7px 10px;background:#f8fafc;font-size:11px;font-weight:600;color:#0F6E56;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #e5e5e5;">Horario</th>
+              <th style="text-align:right;padding:7px 10px;background:#f8fafc;font-size:11px;font-weight:600;color:#525252;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #e5e5e5;">Total</th>
+              <th style="padding:7px 10px;background:#f8fafc;border-bottom:1px solid #e5e5e5;width:120px;"></th>
+            </tr>
+          </thead>
+          <tbody id="visitTableBody">
+            <tr><td colspan="5" style="text-align:center;padding:24px;color:#a3a3a3;">Cargando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reviews Tab -->
+  <div class="tab" id="tab-reviews">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Reseñas</div>
+        <div class="page-sub" id="reviewsSubtitle">Cargando…</div>
+      </div>
+    </div>
+
+    <div class="filters-bar">
+      <input type="text" id="revSearch" placeholder="Buscar por profesor o texto…" oninput="debounceLoadReviews()">
+      <select id="revCU" onchange="loadReviews(1)">
+        <option value="all">Todos los centros</option>
+        <option value="CUCEI">CUCEI</option>
+        <option value="CUCEA">CUCEA</option>
+        <option value="CUCS">CUCS</option>
+        <option value="CUAAD">CUAAD</option>
+        <option value="CUCBA">CUCBA</option>
+        <option value="CUCSH">CUCSH</option>
+        <option value="CUALTOS">CUALTOS</option>
+        <option value="CUCIENEGA">CUCIENEGA</option>
+        <option value="CUCOSTA">CUCOSTA</option>
+        <option value="CUCSUR">CUCSUR</option>
+        <option value="CUSUR">CUSUR</option>
+        <option value="CUVALLES">CUVALLES</option>
+        <option value="CUNORTE">CUNORTE</option>
+        <option value="CUTONALA">CUTONALA</option>
+        <option value="UDG_VIRTUAL">UDG Virtual</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Profesor</th>
+            <th>CU</th>
+            <th>Ciclo / Materia</th>
+            <th>Cal.</th>
+            <th>Texto</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="reviewsBody">
+          <tr><td colspan="9" style="text-align:center;padding:40px;color:#a3a3a3;">Cargando…</td></tr>
+        </tbody>
+      </table>
+      <div class="pagination" id="reviewsPagination"></div>
+    </div>
+  </div>
+
+  <!-- Tickets Tab -->
+  <div class="tab" id="tab-tickets">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Tickets de soporte</div>
+        <div class="page-sub">Reportes enviados por usuarios</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <select id="ticketFilter" onchange="loadTickets()" style="padding:8px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;font-family:inherit;">
+          <option value="pendiente">Pendientes</option>
+          <option value="resuelto">Resueltos</option>
+          <option value="all">Todos</option>
+        </select>
+      </div>
+    </div>
+    <div id="ticketsBody">
+      <div class="empty-state"><i class="ti ti-clock"></i>Cargando tickets…</div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- Edit review modal -->
+<div class="edit-overlay" id="editOverlay">
+  <div class="edit-modal">
+    <h3><i class="ti ti-edit" style="margin-right:6px;"></i>Editar reseña #<span id="editId"></span></h3>
+    <textarea id="editTexto" placeholder="Texto de la reseña…"></textarea>
+    <label>
+      <input type="checkbox" id="editCensored">
+      Censurar reseña (ocultar al público)
+    </label>
+    <div class="edit-modal-btns">
+      <button class="btn-cancel" onclick="closeEdit()">Cancelar</button>
+      <button class="btn-save" onclick="saveEdit()"><i class="ti ti-check"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+let _currentPage = 1;
+let _editingId = null;
+let _searchTimer = null;
+let _reviewsMap = {};
+
+// Tab navigation
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'reviews')   loadReviews(1);
+  if (name === 'tickets')   loadTickets();
+  if (name === 'dashboard') loadStats();
+}
+
+// Toast notification
+function showToast(msg, ok = true) {
+  const t = document.getElementById('toast');
+  t.innerHTML = `<i class="ti ti-${ok ? 'circle-check' : 'alert-circle'}"></i> ${msg}`;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Statistics loading
+let _visitData = null;
+let _visitTab  = 'hoy';
+
+async function loadStats() {
+  try {
+    const [stats, visitas] = await Promise.all([
+      fetch('/admin/api/stats').then(r => r.json()),
+      fetch('/admin/api/visitas').then(r => r.json())
+    ]);
+    document.getElementById('statTotal').textContent    = stats.total_reviews;
+    document.getElementById('statVerif').textContent    = stats.verificadas;
+    document.getElementById('statTickets').textContent  = stats.tickets_pending;
+    document.getElementById('statCensored').textContent = stats.censuradas;
+
+    _visitData = visitas;
+    document.getElementById('cicloTabBtn').textContent = visitas.ciclo_label || 'Ciclo';
+    document.getElementById('subCicloLbl').textContent = visitas.ciclo_label || 'Ciclo';
+    document.getElementById('subHoy').textContent    = visitas.hoy;
+    document.getElementById('subSemana').textContent = visitas.semana;
+    document.getElementById('subMes').textContent    = visitas.mes;
+    document.getElementById('subCiclo').textContent  = visitas.ciclo;
+    document.getElementById('visitTotal').textContent = `Total histórico: ${visitas.total.toLocaleString()}`;
+    setVisitTab(_visitTab, document.querySelector('.visit-tab.active'));
+    renderVisitTable(visitas.por_dia);
+  } catch { showToast('Error al cargar stats', false); }
+}
+
+function setVisitTab(tab, el) {
+  _visitTab = tab;
+  document.querySelectorAll('.visit-tab').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (!_visitData) return;
+  const map = { hoy: [_visitData.hoy, 'visitas hoy'], semana: [_visitData.semana, 'visitas esta semana'],
+                mes: [_visitData.mes, 'visitas este mes'], ciclo: [_visitData.ciclo, `visitas en el ciclo ${_visitData.ciclo_label||''}`] };
+  const [num, lbl] = map[tab] || [0,''];
+  document.getElementById('visitBig').textContent = num.toLocaleString();
+  document.getElementById('visitBigLabel').textContent = lbl;
+}
+
+function renderVisitTable(rows) {
+  const tbody = document.getElementById('visitTableBody');
+  if (!rows || !rows.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:#a3a3a3;">Sin datos aún — las visitas aparecerán aquí</td></tr>';
+    return;
+  }
+  const maxTotal = Math.max(...rows.map(r => (r.index||0)+(r.horario||0)+(r.otro||0)), 1);
+  tbody.innerHTML = rows.map(r => {
+    const total = (r.index||0)+(r.horario||0)+(r.otro||0);
+    const pct   = Math.round(total/maxTotal*100);
+    const [yr,mo,dy] = r.dia.split('-');
+    const fecha = `${dy}/${mo}/${yr}`;
+    return `<tr>
+      <td style="padding:8px 10px;font-size:13px;color:#262626;">${fecha}</td>
+      <td style="padding:8px 10px;text-align:right;font-weight:600;color:#185FA5;">${r.index||0}</td>
+      <td style="padding:8px 10px;text-align:right;font-weight:600;color:#0F6E56;">${r.horario||0}</td>
+      <td style="padding:8px 10px;text-align:right;font-weight:700;color:#042C53;">${total}</td>
+      <td style="padding:8px 10px;">
+        <div class="visit-bar-bg"><div class="visit-bar" style="width:${pct}%"></div></div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// Reviews handling
+function debounceLoadReviews() {
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(() => loadReviews(1), 350);
+}
+
+async function loadReviews(page = 1) {
+  _currentPage = page;
+  const q  = encodeURIComponent(document.getElementById('revSearch').value.trim());
+  const cu = document.getElementById('revCU').value;
+  const tbody = document.getElementById('reviewsBody');
+  tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:#a3a3a3;">Cargando…</td></tr>`;
+
+  try {
+    const d = await fetch(`/admin/api/reviews?page=${page}&q=${q}&cu=${cu}`).then(r => r.json());
+    document.getElementById('reviewsSubtitle').textContent = `${d.total} reseña${d.total !== 1 ? 's' : ''} · Página ${d.page} de ${d.pages}`;
+
+    if (!d.reviews.length) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:#a3a3a3;"><i class="ti ti-search-off" style="font-size:28px;display:block;margin-bottom:10px;"></i>Sin resultados</td></tr>`;
+    } else {
+      _reviewsMap = {};
+      d.reviews.forEach(r => { _reviewsMap[r.id] = r; });
+      tbody.innerHTML = d.reviews.map(r => `
+        <tr class="${r.censored ? 'censored-row' : ''}">
+          <td style="font-size:11px;color:#a3a3a3;">${r.id}</td>
+          <td style="font-weight:600;font-size:12px;max-width:130px;">${esc(r.profesor_nombre)}</td>
+          <td><span style="font-size:11px;background:#E6F1FB;color:#185FA5;padding:2px 6px;border-radius:6px;">${esc(r.cu)}</span></td>
+          <td style="font-size:12px;color:#525252;">${esc(r.ciclo || '—')}<br><span style="font-size:11px;">${esc(r.materia || '—')}</span></td>
+          <td style="font-size:13px;font-weight:600;color:#042C53;">${r.calificacion != null ? r.calificacion + '/100' : '—'}<br><span style="font-size:11px;font-weight:400;color:#737373;">${r.rating_general}/5 ★</span></td>
+          <td class="text-cell" style="font-size:12px;">${esc(r.texto || '—').slice(0,100)}${(r.texto||'').length>100?'…':''}</td>
+          <td>
+            ${r.verificada ? '<span class="badge-v verified"><i class="ti ti-check"></i> Verif.</span>' : '<span class="badge-v unverified">Sin verif.</span>'}
+            ${r.censored ? '<br><span class="badge-v censored" style="margin-top:4px;display:inline-block;">Censurada</span>' : ''}
+          </td>
+          <td style="font-size:11px;color:#737373;white-space:nowrap;">${r.created_at ? r.created_at.slice(0,10) : '—'}</td>
+          <td>
+            <div class="action-btns">
+              <button class="btn-sm btn-edit" onclick="openEdit(${r.id})">
+                <i class="ti ti-edit"></i> Editar
+              </button>
+              <button class="btn-sm btn-delete" onclick="deleteReview(${r.id})">
+                <i class="ti ti-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Pagination
+    const pag = document.getElementById('reviewsPagination');
+    if (d.pages <= 1) { pag.innerHTML = ''; return; }
+    let btns = '';
+    if (page > 1) btns += `<button class="page-btn" onclick="loadReviews(${page-1})">← Anterior</button>`;
+    const start = Math.max(1, page - 2);
+    const end   = Math.min(d.pages, page + 2);
+    for (let i = start; i <= end; i++) {
+      btns += `<button class="page-btn ${i===page?'cur':''}" onclick="loadReviews(${i})">${i}</button>`;
+    }
+    if (page < d.pages) btns += `<button class="page-btn" onclick="loadReviews(${page+1})">Siguiente →</button>`;
+    pag.innerHTML = `<span class="page-info">Página ${page} de ${d.pages}</span>` + btns;
+  } catch { showToast('Error al cargar reseñas', false); }
+}
+
+// Edit review dialog
+function openEdit(id) {
+  const r = _reviewsMap[id] || {};
+  _editingId = id;
+  document.getElementById('editId').textContent = id;
+  document.getElementById('editTexto').value = r.texto || '';
+  document.getElementById('editCensored').checked = !!r.censored;
+  const ov = document.getElementById('editOverlay');
+  ov.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(4,44,83,0.55);z-index:9999;align-items:center;justify-content:center;padding:20px;';
+}
+function closeEdit() {
+  document.getElementById('editOverlay').style.display = 'none';
+  _editingId = null;
+}
+async function saveEdit() {
+  if (!_editingId) return;
+  const texto    = document.getElementById('editTexto').value;
+  const censored = document.getElementById('editCensored').checked;
+  try {
+    const r = await fetch(`/admin/api/reviews/${_editingId}/edit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texto, censored })
+    }).then(r => r.json());
+    if (r.success) {
+      showToast('Reseña actualizada');
+      closeEdit();
+      loadReviews(_currentPage);
+    }
+  } catch { showToast('Error al guardar', false); }
+}
+
+async function deleteReview(id) {
+  if (!confirm(`¿Eliminar reseña #${id}? Esta acción es irreversible.`)) return;
+  try {
+    const r = await fetch(`/admin/api/reviews/${id}/delete`, { method: 'POST' }).then(r => r.json());
+    if (r.success) { showToast('Reseña eliminada'); loadReviews(_currentPage); }
+  } catch { showToast('Error al eliminar', false); }
+}
+
+// Support ticket actions
+async function loadTickets() {
+  const estado = document.getElementById('ticketFilter').value;
+  const body = document.getElementById('ticketsBody');
+  body.innerHTML = `<div class="empty-state"><i class="ti ti-clock"></i>Cargando…</div>`;
+  try {
+    const tickets = await fetch(`/admin/api/tickets?estado=${estado}`).then(r => r.json());
+    if (!tickets.length) {
+      body.innerHTML = `<div class="empty-state"><i class="ti ti-mood-happy"></i>No hay tickets ${estado === 'pendiente' ? 'pendientes' : ''}</div>`;
+      return;
+    }
+    body.innerHTML = tickets.map(t => `
+      <div class="ticket-card ${t.estado === 'resuelto' ? 'resolved' : ''}">
+        <div class="ticket-header">
+          <div>
+            <span class="badge-v ${t.estado === 'pendiente' ? 'pending' : 'resolved'}">${t.estado}</span>
+            <strong style="font-size:14px;color:#042C53;margin-left:10px;">#${t.id}</strong>
+          </div>
+          ${t.estado === 'pendiente' ? `<button class="btn-sm btn-resolve" onclick="resolveTicket(${t.id})"><i class="ti ti-check"></i> Marcar resuelto</button>` : ''}
+        </div>
+        <div class="ticket-desc">${esc(t.descripcion)}</div>
+        <div class="ticket-meta">
+          <span><i class="ti ti-calendar" style="font-size:12px;"></i> ${t.created_at ? t.created_at.slice(0,16) : '—'}</span>
+          ${t.email ? `<span><i class="ti ti-mail" style="font-size:12px;"></i> ${esc(t.email)}</span>` : ''}
+        </div>
+        ${t.foto_nombre ? `
+          <div class="ticket-img">
+            <img src="/admin/uploads/${t.foto_nombre}" alt="Adjunto" onclick="window.open('/admin/uploads/${t.foto_nombre}','_blank')">
+          </div>` : ''}
+      </div>
+    `).join('');
+  } catch { showToast('Error al cargar tickets', false); }
+}
+
+async function resolveTicket(id) {
+  try {
+    const r = await fetch(`/admin/api/tickets/${id}/resolve`, { method: 'POST' }).then(r => r.json());
+    if (r.success) { showToast('Ticket marcado como resuelto'); loadTickets(); }
+  } catch { showToast('Error', false); }
+}
+
+// Utility functions
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.getElementById('editOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('editOverlay')) closeEdit();
+});
+
+// Initialization
+loadStats();
+</script>
+</body>
+</html>

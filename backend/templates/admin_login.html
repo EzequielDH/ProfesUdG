@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin · ProfesUdG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 4px 32px rgba(4,44,83,0.10);
+      border-top: 4px solid #185FA5;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #042C53;
+      margin-bottom: 32px;
+    }
+    .logo i { font-size: 22px; color: #185FA5; }
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      background: #E6F1FB;
+      color: #185FA5;
+      padding: 3px 10px;
+      border-radius: 999px;
+      margin-left: 8px;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #525252;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #0a0a0a;
+      margin-bottom: 16px;
+      transition: border-color 0.2s;
+    }
+    input:focus { outline: none; border-color: #185FA5; }
+    .error {
+      background: #FEF2F2;
+      border: 1px solid #FCA5A5;
+      color: #991B1B;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    button[type="submit"] {
+      width: 100%;
+      padding: 12px;
+      background: #185FA5;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    button[type="submit"]:hover { background: #0C447C; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <i class="ti ti-school"></i>
+      ProfesUdG
+      <span class="badge">ADMIN</span>
+    </div>
+
+    {% if error %}
+    <div class="error">
+      <i class="ti ti-alert-circle"></i>
+      {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" action="/admin/login">
+      <label for="usuario">Usuario</label>
+      <input type="text" id="usuario" name="usuario" autocomplete="username" autofocus required>
+      <label for="password">Contraseña</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required>
+      <button type="submit">
+        <i class="ti ti-lock-open"></i>
+        Iniciar sesión
+      </button>
+    </form>
+  </div>
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProfesUdG — Encuentra a tu próximo profe</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="#" class="logo">
+        <span class="logo-mark"><i class="ti ti-school"></i></span>
+        ProfesUdG
+      </a>
+      <button class="nav-hamburger" aria-label="Menú" onclick="this.closest('.nav').classList.toggle('nav-open')">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links">
+        <a href="/construir-horario" class="nav-link" style="color:var(--blue-600);font-weight:600;">Construir
+          horario</a>
+        <a href="#profes" class="nav-link">Profesores</a>
+        <a href="#acerca" class="nav-link">Acerca de</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <div class="hero-bg">
+    <section class="hero">
+      <h1 class="hero-title" id="heroTitle">
+        Encuentra a tu próximo <span class="accent">profe</span>
+      </h1>
+      <p class="hero-sub" id="heroSub">
+        Reseñas reales de estudiantes UdG. Filtra por centro universitario,
+        clave o materia. Construye tu horario óptimo en segundos.
+      </p>
+    </section>
+  </div>
+
+  <!-- Statistics Grid -->
+  <div class="stats">
+    <div class="stat stat-blue">
+      <div class="stat-num" data-target="11352">0</div>
+      <div class="stat-label">Profesores</div>
+    </div>
+    <div class="stat stat-purple">
+      <div class="stat-num" data-target="20">0</div>
+      <div class="stat-label">Centros UdG</div>
+    </div>
+    <div class="stat stat-teal">
+      <div class="stat-num" data-target="11861" data-format="k">0</div>
+      <div class="stat-label">Materias</div>
+    </div>
+    <div class="stat stat-amber">
+      <div class="stat-num" data-target="62959" data-format="k">0</div>
+      <div class="stat-label">Secciones</div>
+    </div>
+  </div>
+
+  <!-- Search and Filters -->
+  <div class="search-section">
+    <div class="search-bar">
+      <i class="ti ti-search"></i>
+      <input type="text" id="searchInput" placeholder="Busca un profesor, materia o NRC...">
+      <button class="search-btn">Buscar</button>
+    </div>
+    <div class="filters">
+      <span class="filters-label">Centro:</span>
+      <div class="chips-scroll">
+        <button class="chip active" data-cu="all">Todos</button>
+        <button class="chip" data-cu="CUCEI">CUCEI</button>
+        <button class="chip" data-cu="CUCEA">CUCEA</button>
+        <button class="chip" data-cu="CUCS">CUCS</button>
+        <button class="chip" data-cu="CUAAD">CUAAD</button>
+        <button class="chip" data-cu="CUCBA">CUCBA</button>
+        <button class="chip" data-cu="CUCSH">CUCSH</button>
+        <button class="chip" data-cu="CUALTOS">CUALTOS</button>
+        <button class="chip" data-cu="CUCIENEGA">CUCIENEGA</button>
+        <button class="chip" data-cu="CUCOSTA">CUCOSTA</button>
+        <button class="chip" data-cu="CUCSUR">CUCSUR</button>
+        <button class="chip" data-cu="CUSUR">CUSUR</button>
+        <button class="chip" data-cu="CUVALLES">CUVALLES</button>
+        <button class="chip" data-cu="CUNORTE">CUNORTE</button>
+        <button class="chip" data-cu="CUTONALA">CUTONALA</button>
+        <button class="chip" data-cu="UDG_VIRTUAL">CUVIRTUAL</button>
+        <button class="chip" data-cu="CU_TLAJOMULCO">CUTLAJOMULCO</button>
+        <button class="chip" data-cu="CU_GUADALAJARA">CUGUADALAJARA</button>
+        <button class="chip" data-cu="CU_TLAQUEPAQUE">CUTLAQUEPAQUE</button>
+        <button class="chip" data-cu="CU_CHAPALA">CUCHAPALA</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Professor List -->
+  <section class="section" id="profes">
+    <div class="section-head reveal">
+      <h2 class="section-title">
+        <span class="section-icon"><i class="ti ti-trophy"></i></span>
+        Mejor calificados
+      </h2>
+      <span class="cycle-badge">Ciclo 2026A</span>
+    </div>
+    <div class="prof-grid" id="profGrid"></div>
+  </section>
+
+  <!-- About Project Section -->
+  <section class="section" id="acerca">
+    <div class="section-head reveal">
+      <h2 class="section-title">
+        <span class="section-icon blue"><i class="ti ti-info-circle"></i></span>
+        Acerca del proyecto
+      </h2>
+    </div>
+    <div class="about-grid reveal">
+      <article class="about-card">
+        <div class="about-icon"><i class="ti ti-users"></i></div>
+        <h3>Hecho por estudiantes</h3>
+        <p>Iniciativa independiente de la comunidad UdG. Sin patrocinio institucional ni publicidad.</p>
+      </article>
+      <article class="about-card">
+        <div class="about-icon purple"><i class="ti ti-brand-google"></i></div>
+        <h3>Verificación con Google</h3>
+        <p>Inicia sesión con tu cuenta <code>@alumnos.udg.mx</code> para marcar tu reseña como verificada.</p>
+      </article>
+      <article class="about-card">
+        <div class="about-icon coral"><i class="ti ti-eye-off"></i></div>
+        <h3>Anonimato siempre</h3>
+        <p>Las reseñas nunca muestran tu nombre. La verificación solo confirma que eres estudiante UdG.</p>
+      </article>
+      <article class="about-card">
+        <div class="about-icon teal"><i class="ti ti-brand-github"></i></div>
+        <h3>Código abierto</h3>
+        <p>Todo el código es público y auditable. Cualquiera puede contribuir o reportar errores.</p>
+      </article>
+    </div>
+    <div class="how-it-works reveal">
+      <h3 class="hiw-title">¿Cómo funciona?</h3>
+      <ol class="steps">
+        <li>
+          <span class="step-num">01</span>
+          <div><strong>Busca al profesor</strong><span>Por nombre, materia o NRC. Filtra por centro
+              universitario.</span></div>
+        </li>
+        <li>
+          <span class="step-num">02</span>
+          <div><strong>Lee reseñas reales</strong><span>Calificaciones de claridad, dificultad y si los estudiantes lo
+              recomiendan.</span></div>
+        </li>
+        <li>
+          <span class="step-num">03</span>
+          <div><strong>Aporta tu experiencia</strong><span>Escribe tu reseña anónima o verifica con Google para obtener
+              un badge.</span></div>
+        </li>
+        <li>
+          <span class="step-num">04</span>
+          <div><strong>Arma tu horario</strong><span>Usa el constructor para combinar materias optimizando profes y
+              huecos.</span></div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- Schedule Builder Info -->
+  <section class="section" id="horario">
+    <div class="section-head reveal">
+      <h2 class="section-title">
+        <span class="section-icon purple"><i class="ti ti-calendar-stats"></i></span>
+        Constructor de horario
+      </h2>
+      <span class="cycle-badge" style="background:var(--teal-50);color:var(--teal-600);">DISPONIBLE</span>
+    </div>
+    <p class="section-sub reveal">Genera tu horario óptimo según tus criterios</p>
+    <div class="schedule reveal">
+      <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:22px;">
+        <div style="display:flex;align-items:flex-start;gap:14px;">
+          <div
+            style="width:36px;height:36px;background:var(--blue-50);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--blue-600);font-size:18px;">
+            <i class="ti ti-chart-bar"></i>
+          </div>
+          <div><strong style="font-size:14px;color:var(--blue-900);display:block;margin-bottom:3px;">Historial real de
+              saturación</strong><span style="font-size:13px;color:var(--text-secondary);">Analiza 7 ciclos de datos de
+              SIIAU para predecir qué tan difícil será inscribirse con cada profesor.</span></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:14px;">
+          <div
+            style="width:36px;height:36px;background:var(--teal-50);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--teal-600);font-size:18px;">
+            <i class="ti ti-clock-off"></i>
+          </div>
+          <div><strong style="font-size:14px;color:var(--blue-900);display:block;margin-bottom:3px;">Optimización sin
+              traslape</strong><span style="font-size:13px;color:var(--text-secondary);">Evalúa miles de combinaciones
+              para entregarte los 3 mejores horarios según tu turno y estrategia.</span></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:14px;">
+          <div
+            style="width:36px;height:36px;background:var(--purple-50);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--purple-600);font-size:18px;">
+            <i class="ti ti-shield-check"></i>
+          </div>
+          <div><strong style="font-size:14px;color:var(--blue-900);display:block;margin-bottom:3px;">Análisis de
+              flexibilidad</strong><span style="font-size:13px;color:var(--text-secondary);">Si tu horario ideal incluye
+              materias de difícil acceso, el motor te sugiere alternativas automáticamente.</span></div>
+        </div>
+      </div>
+      <a href="/construir-horario" class="gen-btn" style="text-decoration:none;">
+        <i class="ti ti-sparkles"></i>
+        Abrir Constructor de Horarios
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="trust reveal">
+      <span><i class="ti ti-shield-check"></i> Verificación con Google @alumnos.udg.mx</span>
+      <span class="trust-sep">·</span>
+      <span><i class="ti ti-eye-off"></i> Reseñas 100% anónimas</span>
+      <span class="trust-sep">·</span>
+      <span><i class="ti ti-heart"></i> Hecho por estudiantes</span>
+    </div>
+    <div class="footer-credits reveal">
+      <span>Hecho por</span>
+      <a href="https://github.com/EzequielDH" target="_blank" rel="noopener"><i class="ti ti-brand-github"></i>
+        EzequielDH</a>
+      <span class="trust-sep">·</span>
+      <a href="https://www.linkedin.com/in/ezequiel-dh-b9a673288" target="_blank" rel="noopener"><i
+          class="ti ti-brand-linkedin"></i> Ezequiel DH</a>
+    </div>
+  </footer>
+
+  <!-- Main Modal -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal" id="modalContent"></div>
+  </div>
+
+  <!-- Support Floating Button -->
+  <button class="support-fab" onclick="openSupportModal()">
+    <i class="ti ti-help-circle"></i> Reportar problema
+  </button>
+
+  <!-- Support Request Modal -->
+  <div class="support-overlay" id="supportOverlay" onclick="if(event.target===this)closeSupportModal()">
+    <div class="support-modal">
+      <button class="support-modal-close" onclick="closeSupportModal()"><i class="ti ti-x"></i></button>
+      <h3><i class="ti ti-ticket" style="color:var(--blue-600);margin-right:6px;"></i>Reportar problema</h3>
+      <p>Cuéntanos qué falla o qué mejorarías. Puedes adjuntar una captura de pantalla.</p>
+
+      <label class="support-label" for="supDescripcion">Descripción *</label>
+      <textarea class="support-input" id="supDescripcion"
+        placeholder="Describe el problema con el mayor detalle posible…" maxlength="2000"></textarea>
+
+      <label class="support-label" for="supEmail">Tu correo (opcional)</label>
+      <input type="email" class="support-input" id="supEmail" placeholder="para que te avisemos cuando se resuelva">
+
+      <label class="support-file-label">
+        <i class="ti ti-photo"></i>
+        <span id="supFotoLabel">Adjuntar captura (opcional)</span>
+        <input type="file" id="supFoto" accept="image/*"
+          onchange="document.getElementById('supFotoLabel').textContent=this.files[0]?.name||'Adjuntar captura (opcional)'">
+      </label>
+
+      <div id="supError" style="display:none;color:#991B1B;font-size:12px;margin-bottom:12px;"></div>
+      <div id="supOk" style="display:none;text-align:center;padding:16px 0;">
+        <i class="ti ti-circle-check-filled"
+          style="font-size:36px;color:var(--teal-600);display:block;margin-bottom:8px;"></i>
+        <strong style="color:var(--teal-900);">¡Reporte enviado!</strong>
+        <p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">Gracias por ayudarnos a mejorar.</p>
+      </div>
+
+      <button class="support-submit" id="supBtn" onclick="submitSupport()">
+        <i class="ti ti-send"></i> Enviar reporte
+      </button>
+    </div>
+  </div>
+
+  <!-- Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <!-- App -->
+  <script src="js/main.js"></script>
+  <script src="js/animations.js"></script>
+</body>
+
+</html>
