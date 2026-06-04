@@ -16,11 +16,10 @@
   animation: headerGradient 8s ease infinite;
   padding: 32px 24px 26px;
   text-align: center;
-  border-bottom: 1px solid var(--border);
 }
 .tool-header-inner { max-width: 640px; margin: 0 auto; }
 .tool-title {
-  font-size: clamp(22px, 3.5vw, 34px);
+  font-size: clamp(26px, 4vw, 38px);
   color: var(--blue-900);
   margin-bottom: 8px;
 }

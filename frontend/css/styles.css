@@ -143,7 +143,6 @@ input { font-family: inherit; }
   background: linear-gradient(135deg, #dbeafe, #ede9fe, #e0f2fe, #f0fdf4, #ede9fe, #dbeafe);
   background-size: 300% 300%;
   animation: heroGradient 8s ease infinite;
-  border-bottom: 1px solid var(--border);
 }
 .hero {
   position: relative;
@@ -153,9 +152,9 @@ input { font-family: inherit; }
   margin: 0 auto;
 }
 .hero-title {
-  font-size: clamp(24px, 4vw, 36px);
+  font-size: clamp(26px, 4vw, 38px);
   color: var(--blue-900);
-  margin-bottom: 18px;
+  margin-bottom: 8px;
 }
 .hero-title .accent { color: var(--blue-600); }
 
@@ -174,10 +173,10 @@ input { font-family: inherit; }
 }
 
 .hero-sub {
-  font-size: clamp(15px, 2vw, 17px);
+  font-size: 14px;
   color: var(--blue-800);
   opacity: 0;
-  max-width: 560px;
+  max-width: 620px;
   margin: 0 auto;
   transform: translateY(20px);
 }

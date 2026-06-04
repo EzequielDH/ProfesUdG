@@ -478,6 +478,66 @@ def _load_profes():
 
 _load_profes()
 
+# Blended Rating (algoritmo + reseñas reales)
+#
+# Promedio bayesiano: el score algorítmico actúa como "opinión previa" que las
+# reseñas reales van diluyendo conforme llegan. Verificadas pesan 2×.
+#
+#   nota = (C × prior  +  Σ(peso_i × rating_i)) / (C + Σ peso_i)
+#
+# C ≈ 4 → con pocas reseñas (~5-15) las reales ya dominan; 1 sola casi no mueve.
+
+BAYES_C = 4.0
+_review_agg_cache = {'data': None, 'ts': 0.0}
+_REVIEW_CACHE_TTL = 30  # segundos
+
+def _invalidate_review_cache():
+    _review_agg_cache['data'] = None
+
+def _review_aggregates():
+    import time
+    now = time.time()
+    if _review_agg_cache['data'] is not None and (now - _review_agg_cache['ts']) < _REVIEW_CACHE_TTL:
+        return _review_agg_cache['data']
+    conn = sqlite3.connect(DB_PATH)
+    rows = conn.execute('''
+        SELECT profesor_nombre, cu,
+               SUM(CASE WHEN verificada THEN 2 ELSE 1 END)                  AS wsum,
+               SUM((CASE WHEN verificada THEN 2 ELSE 1 END) * rating_general) AS wrating,
+               COUNT(*)                                                     AS n,
+               SUM(verificada)                                              AS nverif
+        FROM reviews
+        WHERE censored = 0
+        GROUP BY profesor_nombre, cu
+    ''').fetchall()
+    conn.close()
+    agg = {}
+    for nombre, cu, wsum, wrating, n, nverif in rows:
+        agg[(nombre, cu)] = {'wsum': wsum or 0, 'wrating': wrating or 0.0,
+                             'n': n or 0, 'nverif': nverif or 0}
+    _review_agg_cache['data'] = agg
+    _review_agg_cache['ts']   = now
+    return agg
+
+def _blended_rating(score_algo, entry):
+    """Devuelve (nota_combinada 1-5 sin redondear, num_reviews, num_verificadas)."""
+    prior = 1.0 + score_algo / 100.0 * 4.0   # mapea score 0-100 → rating 1-5 (precisión fina)
+    if not entry:
+        return prior, 0, 0
+    blended = (BAYES_C * prior + entry['wrating']) / (BAYES_C + entry['wsum'])
+    return blended, entry['n'], entry['nverif']
+
+def _with_blend(p, agg):
+    """Copia el dict del profesor con la nota combinada y conteo de reseñas."""
+    blended, n, nverif = _blended_rating(p['score'], agg.get((p['nombre'], p['cu'])))
+    q = dict(p)
+    q['rating_algoritmo'] = p['rating']        # nota original solo-algoritmo
+    q['rating']           = round(blended, 1)  # nota combinada (lo que se muestra)
+    q['num_reviews']      = n
+    q['num_verificadas']  = nverif
+    q['_blend']           = blended            # sin redondear, para ordenar
+    return q
+
 # Routes: HTML Pages
 
 @app.route('/')
@@ -513,7 +573,13 @@ def get_profesores():
             if not (nombre_match or materia_match or clave_match or nrc_match):
                 continue
         results.append(p)
-    return jsonify({'total':len(results),'data':results[:limit]})
+    agg = _review_aggregates()
+    data = []
+    for p in results[:limit]:
+        q = _with_blend(p, agg)
+        q.pop('_blend', None)
+        data.append(q)
+    return jsonify({'total':len(results),'data':data})
 
 @app.route('/api/stats')
 def get_stats():
@@ -526,7 +592,12 @@ def get_ranking():
     cu    = request.args.get('cu','all')
     limit = min(int(request.args.get('limit',10)),50)
     pool  = _profes_list if cu=='all' else [p for p in _profes_list if p['cu']==cu]
-    return jsonify(sorted(pool, key=lambda x: -x['score'])[:limit])
+    agg   = _review_aggregates()
+    # Ordena por nota combinada (algoritmo + reseñas reales con peso bayesiano)
+    ranked = sorted(pool, key=lambda p: -_blended_rating(p['score'], agg.get((p['nombre'], p['cu'])))[0])
+    out = [_with_blend(p, agg) for p in ranked[:limit]]
+    for q in out: q.pop('_blend', None)
+    return jsonify(out)
 
 # Routes: Reviews
 
@@ -642,6 +713,7 @@ def post_review():
           email_hash, verificada, nombre_mostrado, foto_url))
     review_id = cur.lastrowid
     conn.commit(); conn.close()
+    _invalidate_review_cache()   # la nueva reseña debe reflejarse en el ranking
 
     env_enviado = False
     if not google_verified and form_email and form_email.endswith('@alumnos.udg.mx'):
@@ -1025,6 +1097,7 @@ def admin_edit_review(rid):
     conn.execute('UPDATE reviews SET texto=?, censored=? WHERE id=?', (texto, censored, rid))
     conn.commit()
     conn.close()
+    _invalidate_review_cache()   # censurar cambia qué reseñas cuentan para el ranking
     return jsonify({'success': True})
 
 @app.route('/admin/api/reviews/<int:rid>/delete', methods=['POST'])
@@ -1034,6 +1107,7 @@ def admin_delete_review(rid):
     conn.execute('DELETE FROM reviews WHERE id=?', (rid,))
     conn.commit()
     conn.close()
+    _invalidate_review_cache()
     return jsonify({'success': True})
 
 @app.route('/admin/api/tickets')

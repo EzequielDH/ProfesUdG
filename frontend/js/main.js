@@ -244,11 +244,22 @@ function starsHtml(rating, size = 13) {
 }
 
 function ratingBlock(p) {
+  let nota;
+  if (p.num_reviews > 0) {
+    // Hay reseñas reales: indica cuántas (y cuántas verificadas)
+    const verif = p.num_verificadas > 0
+      ? ` <i class="ti ti-circle-check-filled" style="color:var(--blue-600);" title="${p.num_verificadas} verificadas"></i>`
+      : '';
+    nota = `<div style="font-size:9px;color:var(--teal-700,#0F6E56);margin-top:2px;font-weight:600;">${p.num_reviews} reseña${p.num_reviews !== 1 ? 's' : ''}${verif}</div>`;
+  } else {
+    // Sin reseñas: la nota es 100% estimada por algoritmo
+    nota = `<div style="font-size:9px;color:var(--text-tertiary);margin-top:2px;">${p.has_history ? 'Estimado' : 'Sin historial'}</div>`;
+  }
   return `
     <div class="prof-rating">
       <div class="prof-rating-num">${p.rating.toFixed(1)}</div>
       ${starsHtml(p.rating)}
-      ${!p.has_history ? `<div style="font-size:9px;color:var(--text-tertiary);margin-top:2px;">Sin historial</div>` : ''}
+      ${nota}
     </div>`;
 }
 

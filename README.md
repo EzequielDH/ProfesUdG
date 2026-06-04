@@ -86,18 +86,48 @@ score = min(demanda + experiencia, 100)
   al tope de 30 puntos, pero uno con 1 materia solo sume ~7 puntos.
 - Profesores **sin historial** reciben `avg_sat = 50` (neutral).
 
-### 2. Rating (estrellas)
+### 2. Rating algorítmico (estrellas base)
 
-El rating de 1 a 5 estrellas que se muestra en la UI se deriva directamente
-del score:
+El score se mapea a una escala de 1 a 5 estrellas:
 
 ```
-rating = min(1 + (score / 100) × 4,  5.0)
+rating_algoritmo = min(1 + (score / 100) × 4,  5.0)
 ```
 
 Un score de 0 → 1 estrella. Score de 100 → 5 estrellas. Escala lineal entre ambos.
+Este valor es solo el **punto de partida**: en cuanto llegan reseñas reales,
+se combina con ellas (ver siguiente sección).
 
-### 3. Proyección de saturación
+### 3. Nota combinada (algoritmo + reseñas reales)
+
+La nota que se muestra y por la que se ordena el ranking es un **promedio
+bayesiano**: el rating algorítmico actúa como una "opinión previa" que las
+reseñas reales van diluyendo conforme se acumulan.
+
+```
+nota = (C × rating_algoritmo  +  Σ(peso_i × rating_reseña_i)) / (C + Σ peso_i)
+```
+
+- **`C = 4`** — fuerza de la opinión previa. Equivale a "4 reseñas imaginarias"
+  con el valor del algoritmo. Con ~5-15 reseñas reales, estas ya dominan; una
+  sola reseña casi no mueve la nota (protege contra trolls).
+- **`peso_i`** — las reseñas **verificadas con Google pesan 2×**; las anónimas 1×.
+- Las reseñas **censuradas** por el admin no cuentan.
+
+Ejemplo: profesor con rating algorítmico de 3.0 que recibe reseñas de 5★:
+
+| Reseñas de 5★ | Nota combinada |
+|---|---|
+| 0 | 3.0 (solo algoritmo) |
+| 1 anónima | 3.4 |
+| 5 anónimas | 4.1 |
+| 15 anónimas | 4.6 |
+| 5 verificadas | 4.4 |
+
+La nota se recalcula en vivo (con caché de 30 s) cada vez que se postea, edita,
+censura o elimina una reseña.
+
+### 4. Proyección de saturación
 
 Para el constructor de horarios se necesita **predecir** la saturación que
 tendrá una sección en el ciclo actual, no solo el promedio histórico.
@@ -119,7 +149,7 @@ saturación_proyectada = clamp(EMA₃ + tend × 0.3,  0,  99.5)
 - El factor `0.3` modera el ajuste para no sobreproyectar.
 - Si el profesor solo tiene 1 ciclo de historial, se usa ese valor directamente.
 
-### 4. Probabilidad de inscripción
+### 5. Probabilidad de inscripción
 
 Dado el promedio del estudiante y la saturación proyectada de una sección,
 calcula la probabilidad de que el estudiante logre inscribirse.
@@ -142,7 +172,7 @@ con `math.erf`) y `sigmoid(x) = 1 / (1 + e^−x)`.
   secciones muy saturadas (>90 %) sean exponencialmente más difíciles.
 - El resultado se clampea a `[0.1, 99.9]` %.
 
-### 5. Generador de horarios (backtracking)
+### 6. Generador de horarios (backtracking)
 
 El optimizador busca todas las combinaciones de secciones sin traslapes.
 
@@ -167,7 +197,7 @@ chocan(A, B):
   si max(A.inicio, B.inicio) < min(A.fin, B.fin) → True
 ```
 
-### 6. Evaluador y ranker de horarios
+### 7. Evaluador y ranker de horarios
 
 Cada combinación válida recibe un **costo** (menor = mejor). Las primeras
 3 combinaciones de menor costo se retornan al usuario.
