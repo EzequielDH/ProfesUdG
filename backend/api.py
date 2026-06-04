@@ -1,6 +1,6 @@
-from flask import Flask, jsonify, request, send_from_directory, redirect, session, render_template, url_for
+from flask import Flask, jsonify, request, send_from_directory, redirect, session, render_template, url_for, abort
 import pandas as pd
-import glob, os, re, math, sqlite3, hashlib, smtplib, json as _json, urllib.request, urllib.error, urllib.parse, uuid
+import glob, os, re, math, sqlite3, hashlib, hmac, secrets, smtplib, json as _json, urllib.request, urllib.error, urllib.parse, uuid
 from functools import wraps
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -8,21 +8,27 @@ from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 # Config
 
-try:
-    import config as _cfg
-    EMAIL_SENDER   = _cfg.EMAIL_SENDER
-    EMAIL_PASSWORD = _cfg.EMAIL_PASSWORD
-    SECRET_KEY     = _cfg.SECRET_KEY
-    BASE_URL       = getattr(_cfg, 'BASE_URL', 'http://localhost:5001')
-    ADMIN_USER     = getattr(_cfg, 'ADMIN_USER', os.environ.get('user_admin', 'admin'))
-    ADMIN_PASS     = getattr(_cfg, 'ADMIN_PASS', os.environ.get('pass_admin', 'profes2026'))
-except ImportError:
-    EMAIL_SENDER   = os.environ.get('EMAIL_SENDER', '')
-    EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD', '')
-    SECRET_KEY     = os.environ.get('SECRET_KEY', 'dev-secret-key')
-    BASE_URL       = os.environ.get('BASE_URL', 'http://localhost:5001')
-    ADMIN_USER     = os.environ.get('user_admin', 'admin')
-    ADMIN_PASS     = os.environ.get('pass_admin', 'profes2026')
+EMAIL_SENDER   = os.environ.get('EMAIL_SENDER', '')
+EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD', '')
+BASE_URL       = os.environ.get('BASE_URL', 'http://localhost:5001')
+ADMIN_USER     = os.environ.get('user_admin', 'admin')
+ADMIN_PASS     = os.environ.get('pass_admin')
+
+# SECRET_KEY firma las cookies de sesión. NUNCA usar un valor fijo conocido
+# (estaría en el repo público → cualquiera podría falsificar la sesión de admin).
+# Si no está configurada, se genera una aleatoria efímera (las sesiones se
+# reinician al reiniciar el servidor, aceptable en desarrollo).
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    SECRET_KEY = secrets.token_hex(32)
+    print("[seguridad] SECRET_KEY no configurada — usando una aleatoria temporal. "
+          "Define SECRET_KEY en producción para mantener sesiones entre reinicios.")
+
+# Si no se definió contraseña de admin, se genera una aleatoria y se imprime,
+# en vez de usar una contraseña por defecto conocida públicamente.
+if not ADMIN_PASS:
+    ADMIN_PASS = secrets.token_urlsafe(12)
+    print(f"[seguridad] pass_admin no configurada — contraseña temporal generada: {ADMIN_PASS}")
 
 GOOGLE_CLIENT_ID     = os.environ.get('ID-client', '')
 GOOGLE_CLIENT_SECRET = os.environ.get('Secret-client', '')
@@ -63,6 +69,49 @@ ALLOWED_EXTS = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
 
 app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path='', template_folder=TEMPLATES_DIR)
 app.secret_key = SECRET_KEY
+
+# ¿Estamos en producción? (BASE_URL con https) — activa cookies solo-HTTPS
+_IS_PROD = BASE_URL.startswith('https://')
+
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,        # JS no puede leer la cookie (mitiga XSS→robo de sesión)
+    SESSION_COOKIE_SAMESITE='Lax',       # el navegador no envía la cookie en POST de otros sitios (mitiga CSRF)
+    SESSION_COOKIE_SECURE=_IS_PROD,      # solo viaja por HTTPS en producción
+    MAX_CONTENT_LENGTH=5 * 1024 * 1024,  # límite de 5 MB por petición (evita DoS por subida gigante)
+)
+
+# Rate limiting — limita peticiones por IP para frenar spam y DoS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+limiter = Limiter(get_remote_address, app=app, default_limits=["300 per hour"])
+
+# Cabeceras de seguridad en todas las respuestas
+@app.after_request
+def _security_headers(resp):
+    resp.headers['X-Frame-Options']        = 'DENY'              # no se puede meter en un iframe (anti-clickjacking)
+    resp.headers['X-Content-Type-Options'] = 'nosniff'          # el navegador respeta el Content-Type declarado
+    resp.headers['Referrer-Policy']        = 'strict-origin-when-cross-origin'
+    resp.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "img-src 'self' https: data:; "
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
+        "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
+        "frame-ancestors 'none'"
+    )
+    return resp
+
+# Defensa CSRF: en peticiones que modifican datos (POST), el header Origin/Referer
+# debe coincidir con el host. Un fetch del mismo sitio lo cumple; un ataque CSRF
+# desde otro dominio no puede falsificar el header Origin.
+@app.before_request
+def _csrf_origin_check():
+    if request.method in ('POST', 'PUT', 'DELETE', 'PATCH'):
+        origin = request.headers.get('Origin') or request.headers.get('Referer', '')
+        if origin:
+            from urllib.parse import urlparse
+            if urlparse(origin).netloc != request.host:
+                abort(403)
 
 centros = {
     "CUAAD": "A", "CUCBA": "B", "CUCEA": "C",
@@ -156,9 +205,14 @@ def _trim_google_name(full_name):
 
 def _verify_google_credential(credential):
     try:
-        url = f"https://oauth2.googleapis.com/tokeninfo?id_token={credential}"
+        # urlencode evita que un valor malicioso altere la URL del request
+        url = "https://oauth2.googleapis.com/tokeninfo?" + urllib.parse.urlencode({'id_token': credential})
         with urllib.request.urlopen(url, timeout=5) as r:
             payload = _json.loads(r.read().decode())
+        # El token DEBE haber sido emitido para NUESTRA app (evita reusar tokens de otras apps)
+        if GOOGLE_CLIENT_ID and payload.get('aud') != GOOGLE_CLIENT_ID:
+            return None
+        # Y el usuario debe pertenecer al dominio institucional
         if payload.get('hd') != 'alumnos.udg.mx':
             return None
         return payload
@@ -507,6 +561,7 @@ def get_reviews(cu, nombre):
                     'avg_calificacion':avg_calificacion})
 
 @app.route('/api/reviews', methods=['POST'])
+@limiter.limit("10 per minute")
 def post_review():
     data   = request.json or {}
     nombre = data.get('profesor_nombre','').strip()
@@ -614,15 +669,22 @@ def verify_review(token):
 # Routes: Optimizer
 
 @app.route('/api/optimizar', methods=['POST'])
+@limiter.limit("15 per minute")   # operación pesada de CPU — limita para evitar DoS
 def optimizar():
     data       = request.json or {}
     centro     = data.get('centro','CUCEI')
     claves_in  = data.get('claves','')
-    promedio   = float(data.get('promedio',85.0))
+    try:
+        promedio = float(data.get('promedio', 85.0))
+    except (ValueError, TypeError):
+        return jsonify({"error": "Promedio inválido"}), 400
+    promedio   = max(0.0, min(100.0, promedio))   # acota el rango
     turno      = data.get('turno','Libre')
     estrategia = data.get('estrategia','Seguro por promedio')
     if centro not in centros:
         return jsonify({"error":"Centro no válido"}), 400
+    if len(claves_in) > 500:   # evita payloads gigantes que exploten el backtracking
+        return jsonify({"error":"Demasiadas claves"}), 400
     claves_crudas = [c.strip().upper() for c in claves_in.split(",") if c.strip()]
     claves        = list(dict.fromkeys(claves_crudas))
     duplicadas    = [c for c in set(claves_crudas) if claves_crudas.count(c)>1]
@@ -693,6 +755,7 @@ def optimizar():
 # Routes: Page Visits
 
 @app.route('/api/visita', methods=['POST'])
+@limiter.limit("60 per minute")
 def post_visita():
     data = request.json or {}
     page = str(data.get('page', '/'))[:50]
@@ -705,6 +768,7 @@ def post_visita():
 # Routes: Public Support
 
 @app.route('/api/soporte', methods=['POST'])
+@limiter.limit("5 per minute")
 def post_soporte():
     descripcion = request.form.get('descripcion', '').strip()[:2000]
     email       = request.form.get('email', '').strip()[:120]
@@ -819,11 +883,14 @@ def requires_admin(f):
     return decorated
 
 @app.route('/admin/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute", methods=['POST'])   # frena ataques de fuerza bruta
 def admin_login():
     error = None
     if request.method == 'POST':
-        if (request.form.get('usuario') == ADMIN_USER and
-                request.form.get('password') == ADMIN_PASS):
+        # compare_digest evita timing attacks (no revela cuántos caracteres acertó)
+        user_ok = hmac.compare_digest(request.form.get('usuario', ''), ADMIN_USER)
+        pass_ok = hmac.compare_digest(request.form.get('password', ''), ADMIN_PASS)
+        if user_ok and pass_ok:
             session['admin_logged_in'] = True
             session.permanent = False
             return redirect('/admin')

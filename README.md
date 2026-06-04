@@ -33,7 +33,7 @@ python -m venv env
 # source env/bin/activate          # Mac/Linux
 
 # 3. Instalar dependencias
-pip install flask pandas itsdangerous
+pip install -r requirements.txt
 
 # 4. Configurar variables de entorno 
 

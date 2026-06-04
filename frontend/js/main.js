@@ -2,6 +2,19 @@
 
 const API_BASE = '';
 
+// Escapa texto del usuario antes de inyectarlo al DOM (previene XSS almacenado)
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// Solo permite URLs http/https (la foto de Google) — evita javascript:/data: en src
+function safeUrl(url) {
+  const s = String(url ?? '').trim();
+  return /^https?:\/\//i.test(s) ? s.replace(/"/g, '&quot;') : '';
+}
+
 // DOM elements
 const grid = document.getElementById('profGrid');
 const searchInput = document.getElementById('searchInput');
@@ -461,14 +474,15 @@ function renderReviews(data) {
     </div>`;
 
   const cards = data.reviews.map(r => {
-    const photoHtml = (r.verificada && r.foto_url)
-      ? `<img src="${r.foto_url}" style="width:22px;height:22px;border-radius:50%;flex-shrink:0;vertical-align:middle;margin-right:4px;" onerror="this.style.display='none'">`
+    const fotoSrc = r.verificada ? safeUrl(r.foto_url) : '';
+    const photoHtml = fotoSrc
+      ? `<img src="${fotoSrc}" style="width:22px;height:22px;border-radius:50%;flex-shrink:0;vertical-align:middle;margin-right:4px;" onerror="this.style.display='none'">`
       : '';
     const nameTag = r.verificada
-      ? `<span class="rev-verified-badge">${photoHtml}${r.nombre_mostrado || 'Anónimo'} <i class="ti ti-circle-check-filled"></i></span>`
+      ? `<span class="rev-verified-badge">${photoHtml}${escapeHtml(r.nombre_mostrado || 'Anónimo')} <i class="ti ti-circle-check-filled"></i></span>`
       : `<span style="font-size:11px;color:var(--text-tertiary);">Anónimo</span>`;
-    const cicloTag = r.ciclo ? `<span style="font-size:11px;color:var(--text-tertiary);">${r.ciclo}</span>` : '';
-    const materiaTag = r.materia ? `<span style="font-size:11px;color:var(--text-tertiary);">${r.materia}</span>` : '';
+    const cicloTag = r.ciclo ? `<span style="font-size:11px;color:var(--text-tertiary);">${escapeHtml(r.ciclo)}</span>` : '';
+    const materiaTag = r.materia ? `<span style="font-size:11px;color:var(--text-tertiary);">${escapeHtml(r.materia)}</span>` : '';
     const califTag = r.calificacion != null
       ? `<span style="font-size:11px;font-weight:700;background:var(--purple-50,#f5f3ff);color:var(--purple-600,#7c3aed);padding:2px 8px;border-radius:999px;">${r.calificacion}/100</span>`
       : '';
@@ -480,7 +494,7 @@ function renderReviews(data) {
         ${r.rating_claridad ? `<span style="font-size:11px;color:var(--text-tertiary);">Claridad: ${starsHtml(r.rating_claridad, 10)}</span>` : ''}
         ${r.rating_dificultad ? `<span style="font-size:11px;color:var(--text-tertiary);">Dificultad: ${starsHtml(r.rating_dificultad, 10)}</span>` : ''}
       </div>` : '';
-    const texto = r.texto ? `<p style="font-size:13px;color:var(--text-secondary);margin:8px 0 0;line-height:1.5;">${r.texto}</p>` : '';
+    const texto = r.texto ? `<p style="font-size:13px;color:var(--text-secondary);margin:8px 0 0;line-height:1.5;">${escapeHtml(r.texto)}</p>` : '';
     return `
       <div class="rev-card">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
