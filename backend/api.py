@@ -80,10 +80,62 @@ app.config.update(
     MAX_CONTENT_LENGTH=5 * 1024 * 1024,  # límite de 5 MB por petición (evita DoS por subida gigante)
 )
 
+# Detrás de un proxy (Nginx/Cloudflare) la IP real viene en X-Forwarded-For.
+# SOLO confiar en esa cabecera si TRUST_PROXY=1, porque si NO hay proxy un
+# atacante podría falsificarla para evadir el rate limiting.
+if os.environ.get('TRUST_PROXY') == '1':
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
 # Rate limiting — limita peticiones por IP para frenar spam y DoS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-limiter = Limiter(get_remote_address, app=app, default_limits=["300 per hour"])
+limiter = Limiter(get_remote_address, app=app, default_limits=["1000 per hour"])
+
+# Los archivos estáticos (CSS/JS/imágenes) no deben contar para el rate limit,
+# si no un usuario normal navegando podría ser bloqueado por error.
+@limiter.request_filter
+def _exempt_static():
+    return request.endpoint == 'static'
+
+# ── Throttle en memoria (ventana deslizante) para abusos específicos ──
+import time as _time
+_throttle_store: dict = {}
+
+def _client_ip():
+    return get_remote_address()
+
+def _throttle_ok(key, max_hits, window_seconds):
+    """True si la acción se permite; False si supera el límite en la ventana."""
+    now = _time.time()
+    # Cota de memoria: si crece demasiado (muchas IPs), se vacía por completo.
+    if len(_throttle_store) > 50000:
+        _throttle_store.clear()
+    bucket = [t for t in _throttle_store.get(key, []) if now - t < window_seconds]
+    if len(bucket) >= max_hits:
+        _throttle_store[key] = bucket
+        return False
+    bucket.append(now)
+    _throttle_store[key] = bucket
+    return True
+
+def _safe_int(val, default, lo=None, hi=None):
+    """Convierte a int sin lanzar error (evita 500 con ?limit=abc) y acota el rango."""
+    try:
+        n = int(val)
+    except (ValueError, TypeError):
+        n = default
+    if lo is not None: n = max(lo, n)
+    if hi is not None: n = min(hi, n)
+    return n
+
+def _safe_google_photo(url):
+    """Solo acepta fotos servidas por Google (evita URLs externas de rastreo)."""
+    try:
+        host = urllib.parse.urlparse(str(url)).netloc.lower()
+    except Exception:
+        return None
+    return str(url)[:400] if host.endswith('googleusercontent.com') else None
 
 # Cabeceras de seguridad en todas las respuestas
 @app.after_request
@@ -99,6 +151,8 @@ def _security_headers(resp):
         "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
         "frame-ancestors 'none'"
     )
+    if _IS_PROD:   # fuerza HTTPS en navegadores durante 1 año
+        resp.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     return resp
 
 # Defensa CSRF: en peticiones que modifican datos (POST), el header Origin/Referer
@@ -556,9 +610,9 @@ def get_centros():
 
 @app.route('/api/profesores')
 def get_profesores():
-    q     = request.args.get('q','').strip().lower()
+    q     = request.args.get('q','').strip().lower()[:100]   # acota la longitud de búsqueda
     cu    = request.args.get('cu','all')
-    limit = min(int(request.args.get('limit',20)),100)
+    limit = _safe_int(request.args.get('limit', 20), 20, 1, 100)
     results = []
     tokens = q.split() if q else []
     for p in _profes_list:
@@ -590,7 +644,7 @@ def get_stats():
 @app.route('/api/ranking')
 def get_ranking():
     cu    = request.args.get('cu','all')
-    limit = min(int(request.args.get('limit',10)),50)
+    limit = _safe_int(request.args.get('limit', 10), 10, 1, 50)
     pool  = _profes_list if cu=='all' else [p for p in _profes_list if p['cu']==cu]
     agg   = _review_aggregates()
     # Ordena por nota combinada (algoritmo + reseñas reales con peso bayesiano)
@@ -610,6 +664,7 @@ def get_reviews(cu, nombre):
                recomienda, calificacion, texto, verificada, nombre_mostrado, foto_url, created_at
         FROM reviews WHERE profesor_nombre=? AND cu=?
         ORDER BY verificada DESC, created_at DESC
+        LIMIT 300
     ''', (nombre, cu)).fetchall()
     conn.close()
     reviews = [dict(r) for r in rows]
@@ -670,11 +725,16 @@ def post_review():
     # Email (Google takes priority over manual entry)
     form_email = data.get('email', '').strip().lower()
     email      = google_email or form_email
-    email_hash = hashlib.sha256(email.encode()).hexdigest() if email else None
+    # Si hay email se usa su hash; si es anónima, se usa la IP como identidad
+    # para que una misma IP no pueda reseñar al mismo profesor varias veces (anti-spam).
+    if email:
+        email_hash = hashlib.sha256(email.encode()).hexdigest()
+    else:
+        email_hash = hashlib.sha256(('ip:' + _client_ip()).encode()).hexdigest()
 
     verificada      = 1 if google_verified else 0
     nombre_mostrado = g_name if google_verified else None
-    foto_url        = str(data.get('foto_url', ''))[:400] if (google_verified and mostrar and data.get('foto_url')) else None
+    foto_url        = _safe_google_photo(data.get('foto_url', '')) if (google_verified and mostrar) else None
 
     conn = sqlite3.connect(DB_PATH)
     if email_hash:
@@ -717,10 +777,13 @@ def post_review():
 
     env_enviado = False
     if not google_verified and form_email and form_email.endswith('@alumnos.udg.mx'):
-        nombre_extraido = _extraer_nombre(form_email) if mostrar else None
-        token = serializer.dumps({'review_id': review_id, 'nombre': nombre_extraido})
-        _send_verification_email(form_email, token, nombre)
-        env_enviado = True
+        # Anti email-bombing: máx. 3 correos de verificación por IP por hora.
+        # Evita que el servidor se use como relay para spamear a terceros.
+        if _throttle_ok('email:' + _client_ip(), 3, 3600):
+            nombre_extraido = _extraer_nombre(form_email) if mostrar else None
+            token = serializer.dumps({'review_id': review_id, 'nombre': nombre_extraido})
+            _send_verification_email(form_email, token, nombre)
+            env_enviado = True
 
     return jsonify({'success': True, 'id': review_id,
                     'verificacion_enviada': env_enviado,
@@ -831,6 +894,10 @@ def optimizar():
 def post_visita():
     data = request.json or {}
     page = str(data.get('page', '/'))[:50]
+    # Anti-inflado: una misma IP+página solo cuenta una vez cada 10 s.
+    # Evita que se llene la tabla (y el disco) con visitas falsas.
+    if not _throttle_ok(f'visit:{_client_ip()}:{page}', 1, 10):
+        return jsonify({'ok': True})
     conn = sqlite3.connect(DB_PATH)
     conn.execute('INSERT INTO page_visits (page) VALUES (?)', (page,))
     conn.commit()
@@ -1059,7 +1126,7 @@ def admin_visitas():
 @app.route('/admin/api/reviews')
 @requires_admin
 def admin_reviews():
-    page    = max(1, int(request.args.get('page', 1)))
+    page    = _safe_int(request.args.get('page', 1), 1, 1, 100000)
     limit   = 20
     offset  = (page - 1) * limit
     cu      = request.args.get('cu', 'all')
