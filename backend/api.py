@@ -39,7 +39,7 @@ def _popup_response(status):
     fallback = f'/?auth={msg}'
     label = '✓ Verificado' if msg == 'ok' else ('✗ No autorizado' if msg == 'denied' else 'Error al verificar')
     return (
-        f'<!DOCTYPE html><html><head><script>(function(){{'
+        f'<!DOCTYPE html><html><head><meta charset="UTF-8"><script>(function(){{'
         f'try{{localStorage.setItem("_gauth","{msg}");}}catch(e){{}}'
         f'if(window.opener&&!window.opener.closed){{'
         f'try{{window.opener.postMessage({{type:"google-auth",status:"{msg}"}},window.location.origin);}}catch(e){{}}'
