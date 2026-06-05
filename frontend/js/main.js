@@ -198,8 +198,7 @@ function showServerError() {
       </div>
       <h3 style="font-family:var(--font-display);font-size:18px;color:var(--blue-900);margin-bottom:8px;">Sin conexión al servidor</h3>
       <p style="font-size:13px;color:var(--text-secondary);max-width:300px;margin:0 auto;">
-        Ejecuta <code style="background:var(--bg);padding:2px 6px;border-radius:4px;">python api.py</code>
-        en la carpeta <code style="background:var(--bg);padding:2px 6px;border-radius:4px;">backend/</code>
+        No pudimos cargar los datos. Revisa tu conexión e inténtalo de nuevo en un momento.
       </p>
     </div>`;
 

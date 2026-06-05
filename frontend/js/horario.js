@@ -2,6 +2,18 @@
 
 const API_BASE = '';
 
+// Escapa texto del usuario antes de inyectarlo al DOM (previene XSS almacenado)
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+// Solo permite URLs http/https (la foto de Google) — evita javascript:/data: en src
+function safeUrl(url) {
+  const s = String(url ?? '').trim();
+  return /^https?:\/\//i.test(s) ? s.replace(/"/g, '&quot;') : '';
+}
+
 const AVATAR_COLORS = {
   CUCEI: 'av-blue', CUCEA: 'av-purple', CUCS: 'av-coral',
   CUAAD: 'av-teal', CUCBA: 'av-teal', CUCSH: 'av-purple',
@@ -265,8 +277,8 @@ optimizarBtn.addEventListener('click', async () => {
     const isNetworkError = err instanceof TypeError;
     showStatus(
       isNetworkError
-        ? 'No se puede conectar con el servidor. Ejecuta primero: <code>python api.py</code> en la carpeta <code>profes_entrenamiento</code>.'
-        : `Error: ${err.message}`,
+        ? 'No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo en un momento.'
+        : 'Ocurrió un error al optimizar. Inténtalo de nuevo.',
       'error'
     );
   } finally {
@@ -367,14 +379,14 @@ function buildProfModal(nombre, cu, prof, revData) {
     const califBadge = revData.avg_calificacion != null ? `<span style="background:#f5f3ff;color:#7c3aed;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;display:inline-flex;align-items:center;gap:3px;"><i class="ti ti-school"></i> Calif. promedio: ${revData.avg_calificacion}/100</span>` : '';
     const header     = `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;"><span style="font-size:13px;color:var(--text-secondary);">${revData.num_reviews} reseña${revData.num_reviews !== 1 ? 's' : ''}</span>${pctBadge}${verBadge}${califBadge}</div>`;
     const cards = (revData.reviews || []).map(r => {
-      const nameTag   = r.verificada ? `<span class="rev-verified-badge">${r.nombre_mostrado || 'Anónimo'} <i class="ti ti-circle-check-filled"></i></span>` : `<span style="font-size:11px;color:var(--text-tertiary);">Anónimo</span>`;
-      const cicloTag  = r.ciclo    ? `<span style="font-size:11px;color:var(--text-tertiary);">${r.ciclo}</span>` : '';
-      const materiaTag = r.materia ? `<span style="font-size:11px;color:var(--text-tertiary);">${r.materia}</span>` : '';
+      const nameTag   = r.verificada ? `<span class="rev-verified-badge">${escapeHtml(r.nombre_mostrado || 'Anónimo')} <i class="ti ti-circle-check-filled"></i></span>` : `<span style="font-size:11px;color:var(--text-tertiary);">Anónimo</span>`;
+      const cicloTag  = r.ciclo    ? `<span style="font-size:11px;color:var(--text-tertiary);">${escapeHtml(r.ciclo)}</span>` : '';
+      const materiaTag = r.materia ? `<span style="font-size:11px;color:var(--text-tertiary);">${escapeHtml(r.materia)}</span>` : '';
       const califTag  = r.calificacion != null ? `<span style="font-size:11px;font-weight:700;background:#f5f3ff;color:#7c3aed;padding:2px 8px;border-radius:999px;">${r.calificacion}/100</span>` : '';
       const recTag    = r.recomienda
         ? `<span style="font-size:10px;background:var(--teal-50);color:var(--teal-900);padding:2px 7px;border-radius:999px;display:inline-flex;align-items:center;gap:2px;"><i class="ti ti-check"></i> Recomienda</span>`
         : `<span style="font-size:10px;background:var(--coral-50);color:var(--coral-900);padding:2px 7px;border-radius:999px;display:inline-flex;align-items:center;gap:2px;"><i class="ti ti-x"></i> No recomienda</span>`;
-      const texto = r.texto ? `<p style="font-size:13px;color:var(--text-secondary);margin:8px 0 0;line-height:1.5;">${r.texto}</p>` : '';
+      const texto = r.texto ? `<p style="font-size:13px;color:var(--text-secondary);margin:8px 0 0;line-height:1.5;">${escapeHtml(r.texto)}</p>` : '';
       return `<div class="rev-card"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">${nameTag}${cicloTag}${materiaTag}${califTag}</div><div style="display:flex;align-items:center;gap:6px;">${starsHtml(r.rating_general, 12)}${recTag}</div></div>${texto}</div>`;
     }).join('');
     reviewsSection = header + cards;

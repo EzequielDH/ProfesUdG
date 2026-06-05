@@ -662,7 +662,7 @@ def get_reviews(cu, nombre):
     rows = conn.execute('''
         SELECT id, ciclo, materia, rating_general, rating_claridad, rating_dificultad,
                recomienda, calificacion, texto, verificada, nombre_mostrado, foto_url, created_at
-        FROM reviews WHERE profesor_nombre=? AND cu=?
+        FROM reviews WHERE profesor_nombre=? AND cu=? AND censored = 0
         ORDER BY verificada DESC, created_at DESC
         LIMIT 300
     ''', (nombre, cu)).fetchall()
@@ -1009,6 +1009,7 @@ def auth_logout_google():
     session.pop('google_verified', None)
     session.pop('google_email', None)
     session.pop('google_name', None)
+    session.pop('google_picture', None)
     return jsonify({'ok': True})
 
 # Admin Authentication
