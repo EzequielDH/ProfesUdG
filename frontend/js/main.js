@@ -706,7 +706,13 @@ async function submitReview(nombre, cu, goBack) {
   }
 
   const califRaw = document.getElementById('rfCalificacion')?.value;
-  const calificacion = califRaw !== '' && califRaw != null ? parseFloat(califRaw) : null;
+  let calificacion = califRaw !== '' && califRaw != null ? parseFloat(califRaw) : null;
+  if (calificacion !== null) {
+    if (isNaN(calificacion) || calificacion < 0 || calificacion > 100) {
+      errDiv.textContent = 'La calificación debe ser un número entre 0 y 100.';
+      errDiv.style.display = 'block'; return;
+    }
+  }
   const mostrarNombre = document.getElementById('rfMostrarNombre')?.checked || false;
 
   const payload = {
