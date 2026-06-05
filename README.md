@@ -1,10 +1,21 @@
 # ProfesUdG
 
+**🌐 [profesudg.me](https://profesudg.me) — Entra y úsala ahora**
+
 Plataforma estudiantil independiente para la Universidad de Guadalajara. Permite
 buscar profesores con datos históricos reales, leer y dejar reseñas verificadas,
 y generar horarios óptimos sin conflictos usando saturación histórica de SIIAU.
 
 > Hecho por Ezequiel Delgadillo, para estudiantes. Sin patrocinio institucional ni fines de lucro.
+
+---
+
+## ¿Qué puedes hacer?
+
+- 🔍 **Buscar profesores** por nombre, materia o NRC en los 19 centros de la UdG
+- ⭐ **Ver y dejar reseñas** verificadas con tu cuenta `@alumnos.udg.mx`
+- 📅 **Construir tu horario óptimo** sin choques, eligiendo la estrategia que más te convenga
+- 📊 **Conocer la probabilidad real** de que te alcance cupo según tu promedio
 
 ---
 
@@ -264,6 +275,25 @@ Disponible en `/admin`. Requiere las credenciales configuradas en
 - Ver estadísticas de uso y visitas
 - Moderar reseñas (editar texto, censurar, eliminar)
 - Gestionar tickets de soporte
+
+---
+
+## Seguridad
+
+| Área | Medida implementada |
+|---|---|
+| **Inyección SQL** | Consultas parametrizadas con `?` en todas las queries |
+| **XSS almacenado** | Escape de HTML en todo contenido de usuario antes de renderizar |
+| **CSRF** | Cookies `SameSite=Lax` + validación de header `Origin` en cada POST |
+| **Autenticación admin** | Comparación de tiempo constante (`hmac.compare_digest`) + rate limit 10/min |
+| **Sesiones** | `SECRET_KEY` aleatoria, cookies `HttpOnly` + `Secure` en producción |
+| **Google OAuth** | Valida `aud` (audiencia) del token + solo acepta `@alumnos.udg.mx` |
+| **Rate limiting** | Por IP: optimizador 15/min, reseñas 10/min, soporte 5/min |
+| **Anti-spam reseñas** | Deduplicación por email hash y por IP para usuarios anónimos |
+| **Anti email-bomb** | Máximo 3 correos de verificación por IP por hora |
+| **Subida de archivos** | Solo extensiones de imagen, nombre UUID, límite 5 MB |
+| **Cabeceras HTTP** | CSP, X-Frame-Options, X-Content-Type-Options, HSTS en producción |
+| **Privacidad** | Los emails se almacenan como hash SHA-256, nunca en texto plano |
 
 ---
 
