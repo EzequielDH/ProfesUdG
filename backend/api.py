@@ -30,8 +30,8 @@ if not ADMIN_PASS:
     ADMIN_PASS = secrets.token_urlsafe(12)
     print(f"[seguridad] pass_admin no configurada — contraseña temporal generada: {ADMIN_PASS}")
 
-GOOGLE_CLIENT_ID     = os.environ.get('ID-client', '')
-GOOGLE_CLIENT_SECRET = os.environ.get('Secret-client', '')
+GOOGLE_CLIENT_ID     = os.environ.get('GOOGLE_CLIENT_ID') or os.environ.get('ID-client', '')
+GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET') or os.environ.get('Secret-client', '')
 GOOGLE_REDIRECT_URI  = os.environ.get('GOOGLE_REDIRECT_URI', 'http://localhost:5001/api/auth/callback')
 
 def _popup_response(status):
