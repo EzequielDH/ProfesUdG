@@ -98,19 +98,25 @@ Un score de 0 → 1 estrella. Score de 100 → 5 estrellas. Escala lineal entre 
 Este valor es solo el **punto de partida**: en cuanto llegan reseñas reales,
 se combina con ellas (ver siguiente sección).
 
-### 3. Nota combinada (algoritmo + reseñas reales)
+### 3. Nota combinada (algoritmo + reseñas reales) — *sistema tipo IMDb*
 
 La nota que se muestra y por la que se ordena el ranking es un **promedio
-bayesiano**: el rating algorítmico actúa como una "opinión previa" que las
-reseñas reales van diluyendo conforme se acumulan.
+bayesiano ponderado**, la misma técnica que usan **IMDb**, BoardGameGeek y
+otros sitios de reseñas para su "Top". El rating algorítmico actúa como una
+"opinión previa" (prior) que las reseñas reales van diluyendo conforme se acumulan.
 
 ```
 nota = (C × rating_algoritmo  +  Σ(peso_i × rating_reseña_i)) / (C + Σ peso_i)
 ```
 
-- **`C = 4`** — fuerza de la opinión previa. Equivale a "4 reseñas imaginarias"
-  con el valor del algoritmo. Con ~5-15 reseñas reales, estas ya dominan; una
-  sola reseña casi no mueve la nota (protege contra trolls).
+Es la misma forma de la fórmula de IMDb (`WR = (v/(v+m))·R + (m/(v+m))·C`):
+un promedio entre las reseñas reales y un valor previo, ponderado por la
+**cantidad** de reseñas. Aquí el "valor previo" no es una media global fija,
+sino el **score del algoritmo** específico de cada profesor.
+
+- **`C = 4`** — fuerza de la opinión previa (el `m` de IMDb). Equivale a
+  "4 reseñas imaginarias" con el valor del algoritmo. Con ~5-15 reseñas reales,
+  estas ya dominan; una sola reseña casi no mueve la nota (protege contra trolls).
 - **`peso_i`** — las reseñas **verificadas con Google pesan 2×**; las anónimas 1×.
 - Las reseñas **censuradas** por el admin no cuentan.
 
