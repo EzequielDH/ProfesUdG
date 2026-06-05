@@ -1,6 +1,6 @@
 # ProfesUdG
 
-**🌐 [profesudg.me](https://profesudg.me) — Entra y úsala ahora**
+**[profesudg.me](https://profesudg.me) — Plataforma en producción**
 
 Plataforma estudiantil independiente para la Universidad de Guadalajara. Permite
 buscar profesores con datos históricos reales, leer y dejar reseñas verificadas,
@@ -10,12 +10,12 @@ y generar horarios óptimos sin conflictos usando saturación histórica de SIIA
 
 ---
 
-## ¿Qué puedes hacer?
+## Funcionalidades
 
-- 🔍 **Buscar profesores** por nombre, materia o NRC en los 19 centros de la UdG
-- ⭐ **Ver y dejar reseñas** verificadas con tu cuenta `@alumnos.udg.mx`
-- 📅 **Construir tu horario óptimo** sin choques, eligiendo la estrategia que más te convenga
-- 📊 **Conocer la probabilidad real** de que te alcance cupo según tu promedio
+- Buscar profesores por nombre, materia o NRC en los 19 centros de la UdG
+- Ver y dejar reseñas verificadas con cuenta `@alumnos.udg.mx`
+- Construir horario óptimo sin choques según la estrategia preferida
+- Conocer la probabilidad real de cupo según tu promedio
 
 ---
 
