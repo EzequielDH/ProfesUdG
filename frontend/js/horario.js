@@ -272,6 +272,7 @@ optimizarBtn.addEventListener('click', async () => {
     }
 
     showResults(html);
+    setTimeout(() => window.showDonationPopup?.(), 4000);
 
   } catch (err) {
     const isNetworkError = err instanceof TypeError;

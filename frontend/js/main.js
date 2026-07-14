@@ -775,6 +775,7 @@ async function submitReview(nombre, cu, goBack) {
       gsap.fromTo(okDiv, { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(1.5)' });
     }
     document.getElementById('rfViewBtn').addEventListener('click', () => goBack(true));
+    setTimeout(() => window.showDonationPopup?.(), 3000);
 
   } catch {
     errDiv.textContent = 'Error de conexión con el servidor.';
