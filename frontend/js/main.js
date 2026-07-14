@@ -603,7 +603,7 @@ function showReviewForm(nombre, cu, materias = []) {
       <p style="font-size:12px;color:var(--text-tertiary);margin:4px 0 10px;line-height:1.5;">
         Opcional — verifica con tu cuenta Google
         <code style="background:var(--blue-50);color:var(--blue-900);padding:1px 5px;border-radius:4px;font-size:11px;">@alumnos.udg.mx</code>
-        para obtener el badge <i class="ti ti-circle-check-filled" style="color:var(--blue-600);font-size:11px;"></i>
+        para hacer fiable tu reseña <i class="ti ti-circle-check-filled" style="color:var(--blue-600);font-size:11px;"></i>
       </p>
       <div id="rfGoogleBtn"></div>
     </div>
@@ -753,7 +753,7 @@ async function submitReview(nombre, cu, goBack) {
     const verMsg = data.google_verificada
       ? `<p style="margin-top:6px;font-size:13px;color:var(--teal-900);">Tu reseña fue <strong>verificada automáticamente</strong> con tu cuenta Google.</p>`
       : (data.verificacion_enviada
-        ? `<p style="margin-top:6px;font-size:13px;color:var(--text-secondary);">Revisa tu correo <strong>@alumnos.udg.mx</strong> para obtener el badge <i class="ti ti-circle-check-filled" style="color:var(--blue-600);"></i></p>`
+        ? `<p style="margin-top:6px;font-size:13px;color:var(--text-secondary);">Revisa tu correo <strong>@alumnos.udg.mx</strong> para hacer fiable tu reseña <i class="ti ti-circle-check-filled" style="color:var(--blue-600);"></i></p>`
         : '');
 
     okDiv.innerHTML = `
