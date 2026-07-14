@@ -669,7 +669,10 @@ function initStarPickers() {
     const stars = picker.querySelectorAll('.sp-star');
     const label = picker.querySelector('.sp-label');
     let selected = 0;
-    const labels = ['', 'Muy malo', 'Malo', 'Regular', 'Bueno', 'Excelente'];
+    const field = picker.dataset.field;
+    const labels = field === 'rating_dificultad'
+      ? ['', 'Muy difícil', 'Difícil', 'Regular', 'Fácil', 'Muy fácil']
+      : ['', 'Muy malo', 'Malo', 'Regular', 'Bueno', 'Excelente'];
     const paint = n => stars.forEach((s, i) => {
       s.style.color = i < n ? 'var(--amber-600)' : 'var(--border)';
     });
