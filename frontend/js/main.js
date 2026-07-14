@@ -671,7 +671,7 @@ function initStarPickers() {
     let selected = 0;
     const field = picker.dataset.field;
     const labels = field === 'rating_dificultad'
-      ? ['', 'Muy difícil', 'Difícil', 'Regular', 'Fácil', 'Muy fácil']
+      ? ['', 'Muy fácil', 'Fácil', 'Regular', 'Difícil', 'Muy difícil']
       : ['', 'Muy malo', 'Malo', 'Regular', 'Bueno', 'Excelente'];
     const paint = n => stars.forEach((s, i) => {
       s.style.color = i < n ? 'var(--amber-600)' : 'var(--border)';
