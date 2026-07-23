@@ -506,7 +506,7 @@
   let clicks = 0;
   document.addEventListener('click', function () {
     clicks++;
-    if (clicks === 8) setTimeout(window.showDonationPopup, 500);
+    if (clicks === 15) setTimeout(window.showDonationPopup, 500);
   }, { passive: true });
 })();
 
