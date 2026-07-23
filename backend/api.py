@@ -157,6 +157,8 @@ import time as _time
 _throttle_store: dict = {}
 
 def _client_ip():
+    if request.headers.getlist("X-Forwarded-For"):
+        return request.headers.getlist("X-Forwarded-For")[0].split(',')[0].strip()
     return get_remote_address()
 
 def _throttle_ok(key, max_hits, window_seconds):
@@ -282,6 +284,10 @@ def init_db():
             conn.execute(f'ALTER TABLE reviews ADD COLUMN {col}')
         except Exception:
             pass
+    try:
+        conn.execute("UPDATE reviews SET email_hash = NULL WHERE email_hash LIKE 'ip:%'")
+    except Exception:
+        pass
     conn.commit()
     conn.close()
 
@@ -789,26 +795,28 @@ def post_review():
     # Email (Google takes priority over manual entry)
     form_email = data.get('email', '').strip().lower()
     email      = google_email or form_email
-    # Si hay email se usa su hash; si es anónima, se usa la IP como identidad
-    # para que una misma IP no pueda reseñar al mismo profesor varias veces (anti-spam).
-    if email:
-        email_hash = hashlib.sha256(email.encode()).hexdigest()
-    else:
-        email_hash = hashlib.sha256(('ip:' + _client_ip()).encode()).hexdigest()
-
-    verificada      = 1 if google_verified else 0
-    nombre_mostrado = g_name if google_verified else None
-    foto_url        = _safe_google_photo(data.get('foto_url', '')) if (google_verified and mostrar) else None
 
     conn = sqlite3.connect(DB_PATH)
-    if email_hash:
+
+    if email:
+        email_hash = hashlib.sha256(email.encode()).hexdigest()
         dup = conn.execute(
             'SELECT id FROM reviews WHERE email_hash=? AND profesor_nombre=? AND cu=?',
             (email_hash, nombre, cu)
         ).fetchone()
         if dup:
             conn.close()
-            return jsonify({'error':'Ya tienes una reseña para este profesor'}), 409
+            return jsonify({'error': 'Ya enviaste una reseña para este profesor con esta cuenta de correo'}), 409
+    else:
+        email_hash = None
+        # Anti-spam anónimo: máx 1 reseña anónima por IP al mismo profesor cada 5 minutos
+        if not _throttle_ok(f'anon_rev:{_client_ip()}:{nombre}:{cu}', 1, 300):
+            conn.close()
+            return jsonify({'error': 'Ya enviaste una reseña para este profesor recientemente'}), 429
+
+    verificada      = 1 if google_verified else 0
+    nombre_mostrado = g_name if google_verified else None
+    foto_url        = _safe_google_photo(data.get('foto_url', '')) if (google_verified and mostrar) else None
 
     # Calificacion: optional, must be 0–10
     calificacion = None
