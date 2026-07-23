@@ -998,7 +998,7 @@ def post_soporte():
         subject = f"[ProfesUdG] Nuevo Ticket de Soporte #{ticket_id}"
         html_body = f"""
         <div style="font-family:sans-serif;padding:20px;color:#262626;max-width:550px;border:1px solid #e5e5e5;border-radius:12px;">
-          <h2 style="color:#185FA5;margin-top:0;">📩 Nuevo Ticket de Soporte #{ticket_id}</h2>
+          <h2 style="color:#185FA5;margin-top:0;">Nuevo Ticket de Soporte #{ticket_id}</h2>
           <p><strong>De:</strong> {user_info}</p>
           <p><strong>Descripción del reporte:</strong></p>
           <div style="background:#F0F7FF;padding:14px;border-left:4px solid #185FA5;border-radius:6px;font-size:14px;color:#042C53;margin-bottom:14px;">
@@ -1315,14 +1315,14 @@ def admin_resolve_ticket(tid):
         
         nota_html = f"""
         <div style="background:#FFFBEB;padding:14px;border-left:4px solid #D97706;border-radius:6px;font-size:14px;color:#92400E;margin:14px 0;">
-          <strong>💬 Comentario de resolución del equipo:</strong><br>
+          <strong>Comentario de resolución del equipo:</strong><br>
           {nota_resolucion}
         </div>
         """ if nota_resolucion else ""
 
         html_body = f"""
         <div style="font-family:sans-serif;padding:24px;color:#262626;max-width:550px;border:1px solid #e5e5e5;border-radius:12px;">
-          <h2 style="color:#0F6E56;margin-top:0;">✅ ¡Tu reporte ha sido resuelto!</h2>
+          <h2 style="color:#0F6E56;margin-top:0;">¡Tu reporte ha sido resuelto!</h2>
           <p>Hola,</p>
           <p>Te informamos que tu reporte en <strong>ProfesUdG</strong> con la siguiente descripción:</p>
           <blockquote style="background:#E6F4F1;padding:14px;border-left:4px solid #0F6E56;border-radius:6px;color:#0F6E56;margin:14px 0;white-space:pre-wrap;">
