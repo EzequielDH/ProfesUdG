@@ -809,8 +809,8 @@ def post_review():
             return jsonify({'error': 'Ya enviaste una reseña para este profesor con esta cuenta de correo'}), 409
     else:
         email_hash = None
-        # Anti-spam anónimo: máx 1 reseña anónima por IP al mismo profesor cada 30 segundos
-        if not _throttle_ok(f'anon_rev:{_client_ip()}:{nombre}:{cu}', 1, 30):
+        # Anti-spam anónimo: máx 1 reseña anónima por IP al mismo profesor cada 5 minutos
+        if not _throttle_ok(f'anon_rev:{_client_ip()}:{nombre}:{cu}', 1, 300):
             conn.close()
             return jsonify({'error': 'Ya enviaste una reseña para este profesor recientemente'}), 429
 
