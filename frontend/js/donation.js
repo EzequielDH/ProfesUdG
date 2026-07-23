@@ -111,51 +111,9 @@
   }
 
   /* ── Pop-up de selección de monto ÚNICAMENTE para Google Pay ── */
+  /* ── Manejo de pagos vía Stripe Checkout (Google Pay, Apple Pay y Tarjetas) ── */
   window.triggerPayment = function (method) {
-    if (method === 'apple') {
-      const isAppleDevice = /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      if (!stripeObj && window.Stripe) {
-        stripeObj = Stripe(STRIPE_PUBLISHABLE_KEY);
-      }
-      if (isAppleDevice && stripeObj) {
-        try {
-          const pr = stripeObj.paymentRequest({
-            country: 'MX',
-            currency: 'mxn',
-            total: { label: 'Donación ProfesUdG', amount: 2000 },
-            requestPayerName: false,
-          });
-          pr.canMakePayment().then(function (res) {
-            if (res && res.applePay) {
-              pr.show();
-            } else {
-              openStripePopup();
-            }
-          }).catch(openStripePopup);
-
-          pr.on('paymentmethod', function (ev) {
-            ev.complete('success');
-            if (typeof window.closeFullDonationModal === 'function') {
-              window.closeFullDonationModal();
-            }
-            showDonationThankYouToast();
-          });
-          return;
-        } catch (e) {
-          console.warn('[Stripe ApplePay Error]:', e);
-        }
-      }
-      openStripePopup();
-      return;
-    }
-
-    if (method === 'card') {
-      openStripePopup();
-      return;
-    }
-
-    // Abrir mini pop-up de monto ÚNICAMENTE para Google Pay
-    openAmountPromptModal();
+    openStripePopup();
   };
 
   let selectedPromptAmount = 20;
