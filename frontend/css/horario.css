@@ -388,33 +388,37 @@ select.form-control {
 
 /* Responsive Layout Rules */
 @media (max-width: 860px) {
-  .tool-main { grid-template-columns: 1fr; }
-  .tool-params { position: static; }
+  .tool-main { grid-template-columns: 1fr; gap: 20px; }
+  .tool-params { position: static; width: 100%; }
 }
 @media (max-width: 640px) {
-  .tool-header { padding: 22px 16px 18px; }
-  .tool-main { padding: 0 16px; margin-bottom: 48px; }
-  .tool-params { padding: 16px 14px; }
-  .radio-group { flex-wrap: wrap; }
+  .tool-header { padding: 20px 14px 16px; }
+  .tool-header-inner { max-width: 100%; }
+  .tool-title { font-size: 22px; line-height: 1.25; }
+  .tool-sub { font-size: 12.5px; line-height: 1.5; }
+  .tool-main { padding: 0 12px; margin: 16px auto 48px; gap: 16px; }
+  .tool-params { padding: 16px 14px; border-radius: 14px; }
+  .radio-group { flex-wrap: wrap; gap: 6px; }
 
   /* Results table: horizontal scroll */
-  .results-table { font-size: 11px; min-width: 520px; }
-  .results-table th, .results-table td { padding: 6px 7px; }
+  .schedule-option { padding: 14px 10px; border-radius: 14px; margin-bottom: 16px; }
+  .opt-label { font-size: 15px; }
+  .results-table { font-size: 11px; min-width: 540px; }
+  .results-table th, .results-table td { padding: 6px 6px; }
 
   /* Schedule grid horizontal scroll */
-  .horario-wrap { overflow-x: auto; }
-  .horario-table { min-width: 480px; }
-
-  /* Schedule option cards */
-  .schedule-option { padding: 14px 12px; }
-  .opt-label { font-size: 15px; }
+  .horario-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; }
+  .horario-table { min-width: 500px; font-size: 10px; }
+  .horario-table th, .horario-table td { padding: 5px 3px; }
+  .horario-hora { width: 44px; font-size: 10px; }
+  .horario-clase { font-size: 10px; padding: 4px 2px; }
 
   /* Prof mini-modal full screen */
   .prof-modal-overlay { padding: 0; align-items: flex-end; }
   .prof-modal {
     max-width: 100%;
     max-height: 88vh;
-    border-radius: var(--radius-lg, 14px) var(--radius-lg, 14px) 0 0;
+    border-radius: 20px 20px 0 0;
   }
   .pm-stats { flex-direction: column; }
   .pm-stat { border-right: none; border-bottom: 1px solid var(--border); padding: 10px 16px; }

@@ -530,13 +530,13 @@ function showReviewForm(nombre, cu, materias = []) {
   const ciclos = ['2026A', '2025B', '2025A', '2024B', '2024A', '2023B', '2023A'];
 
   modalContent.innerHTML = `
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px;">
-      <button id="rfBackBtn" class="modal-close" style="position:relative;top:auto;right:auto;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-right:24px;word-break:break-word;">
+      <button id="rfBackBtn" class="modal-close" style="position:relative;top:auto;right:auto;flex-shrink:0;width:34px;height:34px;">
         <i class="ti ti-arrow-left"></i>
       </button>
-      <div>
-        <h3 style="font-family:var(--font-display);font-size:17px;color:var(--blue-900);line-height:1.2;">Agregar reseña</h3>
-        <p style="font-size:12px;color:var(--text-tertiary);margin-top:2px;">${nombre} · ${cu}</p>
+      <div style="flex:1;min-width:0;">
+        <h3 style="font-family:var(--font-display);font-size:16px;color:var(--blue-900);line-height:1.2;margin:0;">Agregar reseña</h3>
+        <p style="font-size:12px;color:var(--text-tertiary);margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${nombre} · ${cu}</p>
       </div>
     </div>
 

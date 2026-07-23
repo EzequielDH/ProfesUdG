@@ -781,27 +781,30 @@ input { font-family: inherit; }
 .modal-overlay.show .modal { transform: scale(1) translateY(0); }
 .modal-close {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  background: var(--bg);
-  border: none;
-  width: 32px;
-  height: 32px;
+  top: 14px;
+  right: 14px;
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   color: var(--text-secondary);
+  z-index: 100;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
 }
 .modal-head {
   display: flex;
-  gap: 16px;
-  margin-bottom: 22px;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding-right: 28px;
 }
 .modal-avatar {
-  width: 70px;
-  height: 70px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   background: var(--blue-600);
   color: white;
@@ -810,13 +813,16 @@ input { font-family: inherit; }
   justify-content: center;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 24px;
+  font-size: 22px;
   flex-shrink: 0;
 }
 .modal-name {
-  font-size: 22px;
+  font-size: 19px;
   color: var(--blue-900);
   margin-bottom: 4px;
+  word-break: break-word;
+  line-height: 1.25;
+  padding-right: 12px;
 }
 .modal-dept { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
 .modal-courses { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -1185,14 +1191,21 @@ textarea.support-input {
   /* ── Modal: slide up from bottom ── */
   .modal-overlay { padding: 0; align-items: flex-end; }
   .modal {
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    max-height: 92vh;
-    padding: 20px 16px 28px;
+    border-radius: 20px 20px 0 0;
+    max-height: 90vh;
+    padding: 20px 16px 32px;
     transform: translateY(40px);
+    width: 100%;
+    margin: 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
   }
+  .modal-head { padding-right: 36px; gap: 12px; }
   .modal-stats { grid-template-columns: repeat(2, 1fr); }
-  .modal-avatar { width: 52px; height: 52px; font-size: 18px; }
-  .modal-name { font-size: 18px; }
+  .modal-avatar { width: 48px; height: 48px; font-size: 16px; }
+  .modal-name { font-size: 16px; padding-right: 12px; word-break: break-word; line-height: 1.25; }
+  .modal-close { top: 12px; right: 12px; width: 32px; height: 32px; font-size: 16px; }
 
   /* ── Review form meta grid ── */
   .rf-meta-grid { grid-template-columns: 1fr 1fr !important; }
