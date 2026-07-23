@@ -253,33 +253,19 @@
     if (!ov || !modal) return;
 
     ov.style.display = 'flex';
-
-    if (window.gsap) {
-      gsap.killTweensOf([ov, modal]);
-      gsap.set(ov, { opacity: 0 });
-      gsap.set(modal, { opacity: 0, y: 8, scale: 0.98 });
-
-      gsap.to(ov, { opacity: 1, duration: 0.1, ease: 'power1.out' });
-      gsap.to(modal, { opacity: 1, y: 0, scale: 1, duration: 0.12, ease: 'power2.out' });
-    } else {
-      ov.classList.add('show');
-    }
+    ov.classList.add('show');
+    ov.style.opacity = '1';
+    modal.style.opacity = '1';
+    modal.style.transform = 'none';
   };
 
   window.closeFullDonationModal = function () {
     const ov = document.getElementById('donationFullOverlay');
-    if (!ov) return;
     const modal = document.getElementById('donationFullModal');
-    if (window.gsap && modal) {
-      gsap.killTweensOf([ov, modal]);
-      gsap.to(ov, { opacity: 0, duration: 0.08, ease: 'power1.in' });
-      gsap.to(modal, {
-        opacity: 0, y: 6, scale: 0.98, duration: 0.08, ease: 'power1.in',
-        onComplete: () => { ov.style.display = 'none'; }
-      });
-    } else {
+    if (ov) {
       ov.classList.remove('show');
-      setTimeout(() => { ov.style.display = 'none'; }, 100);
+      ov.style.display = 'none';
+      ov.style.opacity = '0';
     }
   };
 
