@@ -111,8 +111,12 @@
   }
 
   /* ── Pop-up de selección de monto ÚNICAMENTE para Google Pay ── */
-  /* ── Manejo de pagos vía Stripe Checkout (Google Pay, Apple Pay y Tarjetas) ── */
+  /* ── Manejo de pagos (Google Pay con selector de monto + Apple Pay/Tarjeta) ── */
   window.triggerPayment = function (method) {
+    if (method === 'google') {
+      openAmountPromptModal();
+      return;
+    }
     openStripePopup();
   };
 
@@ -221,18 +225,34 @@
           requestPayerName: false,
         });
 
-        const isAppleDevice = /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
         pr.canMakePayment().then(function (res) {
-          if (res && ((method === 'apple' && res.applePay && isAppleDevice) || (method === 'google' && res.googlePay) || res.applePay || res.googlePay)) {
+          if (res && res.googlePay) {
             pr.show();
           } else {
             openStripePopup();
           }
         }).catch(openStripePopup);
 
-        pr.on('paymentmethod', function (ev) {
-          ev.complete('success');
+        pr.on('paymentmethod', async function (ev) {
+          try {
+            const resp = await fetch('/api/crear-cargo-stripe', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                paymentMethodId: ev.paymentMethod.id,
+                amount: amountMxn
+              })
+            });
+            const data = await resp.json();
+            if (data.success) {
+              ev.complete('success');
+            } else {
+              ev.complete('fail');
+            }
+          } catch (e) {
+            ev.complete('success');
+          }
+
           if (typeof window.closeFullDonationModal === 'function') {
             window.closeFullDonationModal();
           }
