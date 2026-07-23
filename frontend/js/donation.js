@@ -12,8 +12,11 @@
   function injectFullModal() {
     if (document.getElementById('donationFullOverlay')) return;
     const el = document.createElement('div');
+    el.id = 'donationFullOverlay';
+    el.className = 'dfull-overlay';
+    el.onclick = function(e) { if (e.target === el) closeFullDonationModal(); };
+
     el.innerHTML = `
-<div class="dfull-overlay" id="donationFullOverlay" onclick="if(event.target===this)closeFullDonationModal()">
   <div class="dfull-modal" id="donationFullModal">
     <button class="dfull-close" onclick="closeFullDonationModal()" aria-label="Cerrar"><i class="ti ti-x"></i></button>
 
@@ -75,9 +78,8 @@
     </a>
 
     <p class="dfull-note" id="dfullNote" style="margin-top: 14px;">Cualquier monto ayuda a mantener el proyecto activo.</p>
-  </div>
-</div>`;
-    document.body.appendChild(el.firstElementChild);
+  </div>`;
+    document.body.appendChild(el);
   }
 
   /* ── Manejo de pagos vía Stripe Checkout (Google Pay, Apple Pay y Tarjetas) ── */
@@ -170,8 +172,11 @@
   function injectPopup() {
     if (document.getElementById('donationOverlay')) return;
     const el = document.createElement('div');
+    el.id = 'donationOverlay';
+    el.className = 'donation-overlay';
+    el.onclick = function(e) { if (e.target === el) closeDonationModal(); };
+
     el.innerHTML = `
-<div class="donation-overlay" id="donationOverlay" onclick="if(event.target===this)closeDonationModal()">
   <div class="donation-modal">
     <button class="donation-close" onclick="closeDonationModal()" aria-label="Cerrar"><i class="ti ti-x"></i></button>
     <div class="donation-coffee">☕</div>
@@ -207,9 +212,8 @@
       <button class="donation-btn-later" onclick="closeDonationModal()">Quizás después</button>
       <button class="donation-btn-never" onclick="neverDonation()">No volver a mostrar</button>
     </div>
-  </div>
-</div>`;
-    document.body.appendChild(el.firstElementChild);
+  </div>`;
+    document.body.appendChild(el);
   }
 
   // Pre-inyectar modales al cargar el DOM para eliminar delay en clic
