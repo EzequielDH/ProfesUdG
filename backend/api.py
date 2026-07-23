@@ -20,7 +20,7 @@ def _send_email_thread(to_email, subject, html_body):
     user = os.environ.get('SMTP_USER') or os.environ.get('EMAIL_SENDER', '').strip()
     passwd = os.environ.get('SMTP_PASS') or os.environ.get('EMAIL_PASSWORD', '').strip()
     server_host = os.environ.get('SMTP_SERVER', 'smtp.gmail.com').strip()
-    server_port = int(os.environ.get('SMTP_PORT', '587'))
+    server_port = int(os.environ.get('SMTP_PORT', '465'))
 
     if not user or not passwd or not to_email:
         print(f"[Email Notification Skipped] to: {to_email} (SMTP_USER='{user}' or SMTP_PASS configured: {'Sí' if passwd else 'No'})", flush=True)
@@ -36,28 +36,25 @@ def _send_email_thread(to_email, subject, html_body):
         msg.attach(part)
 
         sent = False
-        # Intento 1: Servidor configurado (por defecto 587 TLS)
+        # Intento 1: Puerto 465 SSL directo (ultra rápido y no bloqueado por DigitalOcean)
         try:
-            if server_port == 465:
-                server = smtplib.SMTP_SSL(server_host, 465, timeout=10)
-            else:
-                server = smtplib.SMTP(server_host, server_port, timeout=10)
-                server.starttls()
+            server = smtplib.SMTP_SSL(server_host, 465, timeout=10)
             server.login(user, passwd)
             server.sendmail(user, [to_email], msg.as_string())
             server.quit()
             sent = True
         except Exception as err1:
-            print(f"[Email Warning] Intento 1 en puerto {server_port} falló ({err1}). Intentando SSL puerto 465...", flush=True)
-            # Intento 2: Fallback a puerto 465 SSL por si el puerto 587 está bloqueado en el VPS
+            print(f"[Email Warning] Intento 1 en puerto 465 SSL falló ({err1}). Intentando puerto 587...", flush=True)
+            # Intento 2: Fallback a puerto 587 TLS
             try:
-                server = smtplib.SMTP_SSL(server_host, 465, timeout=10)
+                server = smtplib.SMTP(server_host, 587, timeout=10)
+                server.starttls()
                 server.login(user, passwd)
                 server.sendmail(user, [to_email], msg.as_string())
                 server.quit()
                 sent = True
             except Exception as err2:
-                print(f"[Email Error] Intento 2 en puerto 465 también falló: {err2}", flush=True)
+                print(f"[Email Error] Intento 2 en puerto 587 también falló: {err2}", flush=True)
                 raise err1
 
         if sent:
