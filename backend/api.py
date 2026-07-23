@@ -710,9 +710,14 @@ def crear_cargo_stripe():
                 return jsonify({'success': True, 'id': res_data.get('id')})
             return jsonify({'error': f"Estado de pago: {res_data.get('status')}"}), 400
     except Exception as e:
-        print(f"[Stripe Charge Warning/Error]: {e}", flush=True)
-        # Si la llamada a la API directa de Stripe devuelve respuesta exitosa o de simulacion:
-        return jsonify({'success': True})
+        err_msg = str(e)
+        if hasattr(e, 'read'):
+            try:
+                err_msg = e.read().decode('utf-8')
+            except:
+                pass
+        print(f"[Stripe Charge Warning/Error]: {err_msg}", flush=True)
+        return jsonify({'success': False, 'error': err_msg}), 400
 
 # Routes: API
 

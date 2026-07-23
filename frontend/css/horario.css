@@ -413,12 +413,12 @@ select.form-control {
   .horario-hora { width: 44px; font-size: 10px; }
   .horario-clase { font-size: 10px; padding: 4px 2px; }
 
-  /* Prof mini-modal full screen */
-  .prof-modal-overlay { padding: 0; align-items: flex-end; }
+  /* Prof mini-modal responsive */
+  .prof-modal-overlay { padding: 16px; align-items: center; }
   .prof-modal {
     max-width: 100%;
-    max-height: 88vh;
-    border-radius: 20px 20px 0 0;
+    max-height: 85vh;
+    border-radius: var(--radius-md);
   }
   .pm-stats { flex-direction: column; }
   .pm-stat { border-right: none; border-bottom: 1px solid var(--border); padding: 10px 16px; }
