@@ -91,7 +91,7 @@
         currency: 'mxn',
         total: {
           label: 'Donación ProfesUdG',
-          amount: 5000, // $50.00 MXN
+          amount: 2000, // $20.00 MXN por defecto
         },
         requestPayerName: false,
       });
