@@ -668,6 +668,11 @@ def construir_horario_page():
 def robots_txt():
     return send_from_directory(FRONTEND_DIR, 'robots.txt')
 
+@app.route('/favicon.svg')
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(FRONTEND_DIR, 'favicon.svg'), 200, {'Content-Type': 'image/svg+xml'}
+
 @app.route('/sitemap.xml')
 def sitemap_xml():
     return send_from_directory(FRONTEND_DIR, 'sitemap.xml'), 200, {'Content-Type': 'application/xml'}
