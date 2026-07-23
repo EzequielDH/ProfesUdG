@@ -133,25 +133,14 @@ if os.environ.get('TRUST_PROXY') == '1':
     from werkzeug.middleware.proxy_fix import ProxyFix
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
-# Rate limiting — limita peticiones por IP para frenar spam y DoS
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-limiter = Limiter(get_remote_address, app=app, default_limits=["1000 per hour"])
-
-# Los archivos estáticos (CSS/JS/imágenes) no deben contar para el rate limit,
-# si no un usuario normal navegando podría ser bloqueado por error.
-@limiter.request_filter
-def _exempt_static():
-    return request.endpoint == 'static'
-
-# ── Throttle en memoria (ventana deslizante) para abusos específicos ──
-import time as _time
-_throttle_store: dict = {}
-
 def _client_ip():
     if request.headers.getlist("X-Forwarded-For"):
         return request.headers.getlist("X-Forwarded-For")[0].split(',')[0].strip()
     return get_remote_address()
+
+# Rate limiting — limita peticiones por IP real para frenar spam y DoS
+from flask_limiter import Limiter
+limiter = Limiter(_client_ip, app=app, default_limits=["10000 per hour"])
 
 def _throttle_ok(key, max_hits, window_seconds):
     """True si la acción se permite; False si supera el límite en la ventana."""
