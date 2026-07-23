@@ -792,14 +792,29 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal()
 // University Center Chip Filter Handlers
 document.querySelectorAll('.chip').forEach(chip => {
   chip.addEventListener('click', () => {
-    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    _activeCU = chip.dataset.cu;
+    const clickedCU = chip.dataset.cu;
+
+    // Toggle behavior: clicking an active CU (other than 'all') deselects it and returns to 'all'
+    if (_activeCU === clickedCU && clickedCU !== 'all') {
+      _activeCU = 'all';
+    } else {
+      _activeCU = clickedCU;
+    }
+
+    // Update active class on all chips
+    document.querySelectorAll('.chip').forEach(c => {
+      c.classList.toggle('active', c.dataset.cu === _activeCU);
+    });
+
+    const activeChip = document.querySelector(`.chip[data-cu="${_activeCU}"]`);
     const q = searchInput.value.trim();
     q ? fetchProfesores(_activeCU, q) : loadRanking(_activeCU);
-    if (window.gsap) gsap.fromTo(chip,
-      { scale: 0.9 },
-      { scale: 1.05, duration: 0.25, ease: 'back.out(2)', onComplete: () => gsap.to(chip, { scale: 1, duration: 0.12 }) });
+
+    if (window.gsap && activeChip) {
+      gsap.fromTo(activeChip,
+        { scale: 0.9 },
+        { scale: 1.05, duration: 0.25, ease: 'back.out(2)', onComplete: () => gsap.to(activeChip, { scale: 1, duration: 0.12 }) });
+    }
   });
 });
 

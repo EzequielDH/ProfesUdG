@@ -303,7 +303,7 @@ input { font-family: inherit; }
   white-space: nowrap;
   flex-shrink: 0;
 }
-.chip[data-cu="all"]            { background: var(--blue-600); color: white; border-color: var(--blue-600); }
+.chip[data-cu="all"]            { background: var(--blue-50);   color: var(--blue-900);   border-color: var(--blue-100); }
 .chip[data-cu="CUCEI"]          { background: var(--blue-50);   color: var(--blue-900);   border-color: var(--blue-100); }
 .chip[data-cu="CUCEA"]          { background: var(--purple-50); color: var(--purple-900); border-color: #D4D3FC; }
 .chip[data-cu="CUCS"]           { background: var(--coral-50);  color: var(--coral-900);  border-color: #F3D0C5; }
