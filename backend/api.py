@@ -23,7 +23,7 @@ def _send_email_thread(to_email, subject, html_body):
     server_port = int(os.environ.get('SMTP_PORT', '587'))
 
     if not user or not passwd or not to_email:
-        print(f"[Email Notification Skipped] to: {to_email} (SMTP_USER='{user}' or SMTP_PASS configured: {'Sí' if passwd else 'No'})")
+        print(f"[Email Notification Skipped] to: {to_email} (SMTP_USER='{user}' or SMTP_PASS configured: {'Sí' if passwd else 'No'})", flush=True)
         return
 
     try:
@@ -48,7 +48,7 @@ def _send_email_thread(to_email, subject, html_body):
             server.quit()
             sent = True
         except Exception as err1:
-            print(f"[Email Warning] Intento 1 en puerto {server_port} falló ({err1}). Intentando SSL puerto 465...")
+            print(f"[Email Warning] Intento 1 en puerto {server_port} falló ({err1}). Intentando SSL puerto 465...", flush=True)
             # Intento 2: Fallback a puerto 465 SSL por si el puerto 587 está bloqueado en el VPS
             try:
                 server = smtplib.SMTP_SSL(server_host, 465, timeout=10)
@@ -57,13 +57,13 @@ def _send_email_thread(to_email, subject, html_body):
                 server.quit()
                 sent = True
             except Exception as err2:
-                print(f"[Email Error] Intento 2 en puerto 465 también falló: {err2}")
+                print(f"[Email Error] Intento 2 en puerto 465 también falló: {err2}", flush=True)
                 raise err1
 
         if sent:
-            print(f"[Email Sent Successfully] To: {to_email} | Subject: {subject}")
+            print(f"[Email Sent Successfully] To: {to_email} | Subject: {subject}", flush=True)
     except Exception as e:
-        print(f"[Email Error] No se pudo enviar correo a {to_email}: {e}")
+        print(f"[Email Error] No se pudo enviar correo a {to_email}: {e}", flush=True)
 
 def send_email_async(to_email, subject, html_body):
     threading.Thread(target=_send_email_thread, args=(to_email, subject, html_body), daemon=True).start()
