@@ -240,6 +240,11 @@ _cache_oferta     = {}
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
+    try:
+        conn.execute("PRAGMA journal_mode=WAL;")
+        conn.execute("PRAGMA synchronous=NORMAL;")
+    except Exception:
+        pass
     conn.execute('''
         CREATE TABLE IF NOT EXISTS reviews (
             id               INTEGER PRIMARY KEY AUTOINCREMENT,
