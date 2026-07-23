@@ -1,6 +1,6 @@
 # ProfesUdG
 
-**[profesudg.me](https://profesudg.me) — Plataforma en producción**
+**[profesudg.com](https://profesudg.com) — Plataforma en producción**
 
 Plataforma estudiantil independiente para la Universidad de Guadalajara. Permite
 buscar profesores con datos históricos reales, leer y dejar reseñas verificadas,
