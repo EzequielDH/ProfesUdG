@@ -148,8 +148,8 @@
 
         <div class="amt-chips-grid">
           <button class="amt-chip-btn active" data-amt="20" onclick="selectAmtChip(20, this)">$20 MXN</button>
+          <button class="amt-chip-btn" data-amt="30" onclick="selectAmtChip(30, this)">$30 MXN</button>
           <button class="amt-chip-btn" data-amt="50" onclick="selectAmtChip(50, this)">$50 MXN</button>
-          <button class="amt-chip-btn" data-amt="100" onclick="selectAmtChip(100, this)">$100 MXN</button>
         </div>
 
         <input type="number" id="amtCustomInput" class="amt-custom-input" placeholder="Otro monto (ej. 30, 80, 150)..." min="10" oninput="clearAmtChips()">
