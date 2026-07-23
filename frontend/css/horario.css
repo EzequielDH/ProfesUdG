@@ -32,8 +32,8 @@
   margin: 32px auto 80px;
   padding: 0 24px;
   display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 24px;
+  grid-template-columns: 310px minmax(0, 1fr);
+  gap: 28px;
   align-items: start;
 }
 

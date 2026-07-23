@@ -45,7 +45,7 @@
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-full: 999px;
-  --container: 1100px;
+  --container: 1320px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
