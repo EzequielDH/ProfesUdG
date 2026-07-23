@@ -1746,6 +1746,105 @@ select.form-control { cursor: pointer; }
   color: #ffffff;
 }
 
+/* Quick Amount Selector Modal */
+.amt-selector-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 44, 83, 0.65);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.amt-selector-overlay.show {
+  opacity: 1;
+}
+.amt-selector-modal {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  border-top: 4px solid var(--blue-600);
+  position: relative;
+  transform: scale(0.95);
+  transition: transform 0.2s ease;
+}
+.amt-selector-overlay.show .amt-selector-modal {
+  transform: scale(1);
+}
+.amt-chips-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 16px 0 12px;
+}
+.amt-chip-btn {
+  padding: 12px 8px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  text-align: center;
+}
+.amt-chip-btn:hover {
+  border-color: var(--blue-400);
+  background: var(--blue-50);
+  color: var(--blue-900);
+}
+.amt-chip-btn.active {
+  background: var(--blue-600);
+  color: white;
+  border-color: var(--blue-600);
+  box-shadow: 0 4px 14px rgba(24, 95, 165, 0.3);
+}
+.amt-custom-input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  box-sizing: border-box;
+  margin-bottom: 16px;
+  transition: border-color 0.2s;
+}
+.amt-custom-input:focus {
+  outline: none;
+  border-color: var(--blue-600);
+}
+.amt-confirm-btn {
+  width: 100%;
+  padding: 13px;
+  background: linear-gradient(135deg, #185FA5 0%, #0C447C 100%);
+  color: white;
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.amt-confirm-btn:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 20px rgba(24, 95, 165, 0.35);
+}
+
 .dfull-stripe-main-btn {
   display: flex;
   align-items: center;

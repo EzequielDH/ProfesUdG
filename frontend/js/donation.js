@@ -110,30 +110,129 @@
     }
   }
 
-  /* ── Manejador 1-Clic de Pago Directo ── */
+  /* ── Pop-up de selección de monto para Google Pay / Apple Pay ── */
   window.triggerPayment = function (method) {
-    const isAppleDevice = /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    
-    if (method === 'apple' && isAppleDevice && paymentRequest) {
-      paymentRequest.canMakePayment().then(function (res) {
-        if (res && res.applePay) {
-          paymentRequest.show();
-          return;
-        }
-        openStripePopup();
-      }).catch(openStripePopup);
-    } else if (method === 'google' && paymentRequest) {
-      paymentRequest.canMakePayment().then(function (res) {
-        if (res && res.googlePay) {
-          paymentRequest.show();
-          return;
-        }
-        openStripePopup();
-      }).catch(openStripePopup);
-    } else {
+    if (method === 'card') {
       openStripePopup();
+      return;
     }
+    
+    // Abrir mini pop-up de monto al presionar Google Pay o Apple Pay
+    openAmountPromptModal(method);
   };
+
+  let selectedPromptAmount = 20;
+
+  function openAmountPromptModal(method) {
+    let activeModal = document.getElementById('amtPromptOverlay');
+    if (activeModal) activeModal.remove();
+
+    selectedPromptAmount = 20;
+    const title = method === 'google' ? 'Google Pay' : 'Apple Pay';
+    const iconClass = method === 'google' ? 'ti-brand-google' : 'ti-brand-apple';
+    const brandColor = method === 'google' ? '#1A73E8' : '#000000';
+
+    const div = document.createElement('div');
+    div.id = 'amtPromptOverlay';
+    div.className = 'amt-selector-overlay';
+    div.onclick = function(e) { if(e.target === div) closeAmountPromptModal(); };
+
+    div.innerHTML = `
+      <div class="amt-selector-modal">
+        <button onclick="closeAmountPromptModal()" style="position:absolute;top:14px;right:14px;background:none;border:none;font-size:18px;cursor:pointer;color:#737373;" aria-label="Cerrar"><i class="ti ti-x"></i></button>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;color:${brandColor};">
+          <i class="ti ${iconClass}" style="font-size:22px;"></i>
+          <strong style="font-size:16px;">Donar con ${title}</strong>
+        </div>
+        <p style="font-size:13px;color:#525252;margin:0 0 14px;">Selecciona el monto que deseas aportar:</p>
+
+        <div class="amt-chips-grid">
+          <button class="amt-chip-btn active" data-amt="20" onclick="selectAmtChip(20, this)">$20 MXN</button>
+          <button class="amt-chip-btn" data-amt="50" onclick="selectAmtChip(50, this)">$50 MXN</button>
+          <button class="amt-chip-btn" data-amt="100" onclick="selectAmtChip(100, this)">$100 MXN</button>
+        </div>
+
+        <input type="number" id="amtCustomInput" class="amt-custom-input" placeholder="Otro monto (ej. 30, 80, 150)..." min="10" oninput="clearAmtChips()">
+
+        <button class="amt-confirm-btn" onclick="confirmPaymentWithAmount('${method}')">
+          <span>Continuar a ${title}</span>
+          <i class="ti ti-arrow-right"></i>
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(div);
+    requestAnimationFrame(() => div.classList.add('show'));
+  }
+
+  window.selectAmtChip = function(amt, btn) {
+    selectedPromptAmount = amt;
+    const inp = document.getElementById('amtCustomInput');
+    if (inp) inp.value = '';
+    document.querySelectorAll('.amt-chip-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  };
+
+  window.clearAmtChips = function() {
+    document.querySelectorAll('.amt-chip-btn').forEach(b => b.classList.remove('active'));
+  };
+
+  window.closeAmountPromptModal = function() {
+    const ov = document.getElementById('amtPromptOverlay');
+    if (!ov) return;
+    ov.classList.remove('show');
+    setTimeout(() => ov.remove(), 200);
+  };
+
+  window.confirmPaymentWithAmount = function(method) {
+    const customVal = parseFloat(document.getElementById('amtCustomInput')?.value);
+    const finalAmount = (!isNaN(customVal) && customVal >= 10) ? customVal : selectedPromptAmount;
+    
+    closeAmountPromptModal();
+    executeStripePaymentRequest(method, finalAmount);
+  };
+
+  function executeStripePaymentRequest(method, amountMxn) {
+    if (!stripeObj && window.Stripe) {
+      stripeObj = Stripe(STRIPE_PUBLISHABLE_KEY);
+    }
+
+    if (stripeObj) {
+      try {
+        const pr = stripeObj.paymentRequest({
+          country: 'MX',
+          currency: 'mxn',
+          total: {
+            label: 'Donación ProfesUdG',
+            amount: Math.round(amountMxn * 100),
+          },
+          requestPayerName: false,
+        });
+
+        const isAppleDevice = /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+        pr.canMakePayment().then(function (res) {
+          if (res && ((method === 'apple' && res.applePay && isAppleDevice) || (method === 'google' && res.googlePay) || res.applePay || res.googlePay)) {
+            pr.show();
+          } else {
+            openStripePopup();
+          }
+        }).catch(openStripePopup);
+
+        pr.on('paymentmethod', function (ev) {
+          ev.complete('success');
+          if (typeof window.closeFullDonationModal === 'function') {
+            window.closeFullDonationModal();
+          }
+          showDonationThankYouToast();
+        });
+        return;
+      } catch (e) {
+        console.warn('[Stripe] Error:', e);
+      }
+    }
+    openStripePopup();
+  }
 
   /* ── Ventana elegante de Stripe Checkout ── */
   window.openStripePopup = function () {
