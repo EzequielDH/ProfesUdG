@@ -151,7 +151,8 @@ limiter = Limiter(key_func=_client_ip, app=app, default_limits=["10000 per hour"
 
 def _throttle_ok(key, max_hits, window_seconds):
     """True si la acción se permite; False si supera el límite en la ventana."""
-    now = _time.time()
+    import time
+    now = time.time()
     # Cota de memoria: si crece demasiado (muchas IPs), se vacía por completo.
     if len(_throttle_store) > 50000:
         _throttle_store.clear()
