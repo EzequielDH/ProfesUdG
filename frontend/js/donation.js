@@ -262,6 +262,73 @@
     setTimeout(() => { ov.style.display = 'none'; }, 200);
   };
 
+  /* ── Manejo de redirección después del pago exitoso (?donado=1) ── */
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('donado') === '1') {
+    if (window.opener && !window.opener.closed) {
+      try {
+        window.opener.postMessage({ type: 'stripe-donation-success' }, '*');
+      } catch (e) {}
+    }
+    document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>¡Gracias por tu donación! — ProfesUdG</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F8FAFC; color: #042C53; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; text-align: center; }
+    .card { background: white; border-radius: 16px; padding: 32px 24px; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #E2E8F0; }
+    .icon { width: 68px; height: 68px; background: #E6F4F1; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 32px; }
+    h1 { font-size: 22px; font-weight: 700; margin: 0 0 10px; color: #042C53; }
+    p { font-size: 14px; color: #525252; line-height: 1.55; margin: 0 0 20px; }
+    .badge { display: inline-block; font-size: 12px; font-weight: 600; color: #185FA5; background: #E6F1FB; padding: 6px 14px; border-radius: 999px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">❤️</div>
+    <h1>¡Muchas gracias por tu apoyo!</h1>
+    <p>Tu donación ayuda directamente a mantener el servidor y el dominio activos para todos los estudiantes UdG.</p>
+    <div class="badge">Esta ventana se cerrará en <span id="sec">6</span>s</div>
+  </div>
+  <script>
+    let s = 6;
+    setInterval(function() {
+      s--;
+      var el = document.getElementById('sec');
+      if (el) el.textContent = s;
+      if (s <= 0) { window.close(); }
+    }, 1000);
+  </script>
+</body>
+</html>`);
+    document.close();
+    return;
+  }
+
+  // Listener en la ventana principal para mostrar toast al recibir notificación de pago exitoso
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.type === 'stripe-donation-success') {
+      if (typeof window.closeFullDonationModal === 'function') {
+        window.closeFullDonationModal();
+      }
+      showDonationThankYouToast();
+    }
+  });
+
+  function showDonationThankYouToast() {
+    const toast = document.createElement('div');
+    toast.innerHTML = `
+      <div style="position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#042C53;color:white;padding:14px 24px;border-radius:14px;font-size:14px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,0.25);z-index:99999;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:22px;">❤️</span>
+        <span>¡Donación recibida! Muchísimas gracias por apoyar a ProfesUdG.</span>
+      </div>
+    `;
+    document.body.appendChild(toast.firstElementChild);
+    setTimeout(() => { toast.firstElementChild?.remove(); }, 7000);
+  }
+
   // Contador de clics
   let clicks = 0;
   document.addEventListener('click', function () {
