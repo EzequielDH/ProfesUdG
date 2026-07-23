@@ -311,13 +311,33 @@
     <div class="donation-coffee">☕</div>
     <h3 class="donation-title">¿Te fue útil ProfesUdG?</h3>
     <p class="donation-body">
-      Mantengo este servidor <strong>de mi bolsillo</strong> — cuesta
-      <strong>$12 USD al mes</strong>. Una pequeña donación me ayuda a mantenerlo activo.
+      Mantengo el servidor y dominio <strong>de mi bolsillo</strong>. Una pequeña donación ayuda a mantener la plataforma activa.
     </p>
-    <a class="donation-btn-kofi" href="${KOFI_URL}" target="_blank" rel="noopener" onclick="closeDonationModal()">
-      <i class="ti ti-coffee"></i> Invitarme un café en Ko-fi
+
+    <div class="dfull-pay-methods" style="margin-bottom:12px;">
+      <span class="dfull-pay-label" style="font-weight:600; color:var(--blue-900);">Selecciona cómo quieres donar:</span>
+      <div class="dfull-pay-badges">
+        <button class="dfull-badge-primary" data-method="google" onclick="triggerPayment('google')">
+          <i class="ti ti-brand-google"></i>
+          <span>Google Pay</span>
+        </button>
+        <button class="dfull-badge-primary" data-method="apple" onclick="triggerPayment('apple')">
+          <i class="ti ti-brand-apple"></i>
+          <span>Apple Pay</span>
+        </button>
+        <button class="dfull-badge-primary" data-method="card" onclick="triggerPayment('card')">
+          <i class="ti ti-credit-card"></i>
+          <span>Tarjeta</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Botón secundario de Ko-fi / PayPal -->
+    <a class="dfull-kofi-subtle-btn" href="${KOFI_URL}" target="_blank" rel="noopener" onclick="closeDonationModal()" style="margin-top:8px;">
+      <i class="ti ti-coffee"></i> Donar vía Ko-fi / PayPal
     </a>
-    <div class="donation-footer-btns">
+
+    <div class="donation-footer-btns" style="margin-top:14px;">
       <button class="donation-btn-later" onclick="closeDonationModal()">Quizás después</button>
       <button class="donation-btn-never" onclick="neverDonation()">No volver a mostrar</button>
     </div>
@@ -371,10 +391,10 @@
     if (window.gsap) {
       gsap.killTweensOf([ov, modal]);
       gsap.set(ov, { opacity: 0 });
-      gsap.set(modal, { opacity: 0, y: 16, scale: 0.97 });
+      gsap.set(modal, { opacity: 0, y: 8, scale: 0.98 });
 
-      gsap.to(ov, { opacity: 1, duration: 0.18, ease: 'power2.out' });
-      gsap.to(modal, { opacity: 1, y: 0, scale: 1, duration: 0.22, ease: 'back.out(1.2)' });
+      gsap.to(ov, { opacity: 1, duration: 0.1, ease: 'power1.out' });
+      gsap.to(modal, { opacity: 1, y: 0, scale: 1, duration: 0.12, ease: 'power2.out' });
     } else {
       ov.classList.add('show');
     }
@@ -386,14 +406,14 @@
     const modal = document.getElementById('donationFullModal');
     if (window.gsap && modal) {
       gsap.killTweensOf([ov, modal]);
-      gsap.to(ov, { opacity: 0, duration: 0.16, ease: 'power2.in' });
+      gsap.to(ov, { opacity: 0, duration: 0.08, ease: 'power1.in' });
       gsap.to(modal, {
-        opacity: 0, y: 12, scale: 0.97, duration: 0.16, ease: 'power2.in',
+        opacity: 0, y: 6, scale: 0.98, duration: 0.08, ease: 'power1.in',
         onComplete: () => { ov.style.display = 'none'; }
       });
     } else {
       ov.classList.remove('show');
-      setTimeout(() => { ov.style.display = 'none'; }, 200);
+      setTimeout(() => { ov.style.display = 'none'; }, 100);
     }
   };
 
