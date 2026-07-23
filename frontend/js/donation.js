@@ -70,7 +70,7 @@
     </div>
 
     <!-- Botón secundario de Ko-fi / PayPal -->
-    <a class="dfull-kofi-subtle-btn" id="dfullBtn" href="${KOFI_URL}" target="_blank" rel="noopener">
+    <a class="dfull-kofi-subtle-btn" id="dfullBtn" href="${KOFI_URL}" target="_blank" rel="noopener" onclick="onKofiClick()">
       <i class="ti ti-coffee"></i> Donar vía Ko-fi / PayPal
     </a>
 
@@ -78,193 +78,30 @@
   </div>
 </div>`;
     document.body.appendChild(el.firstElementChild);
-    initStripeButton();
   }
 
-  /* ── Inicialización de Stripe 1-Clic ── */
-  function initStripeButton() {
-    if (!window.Stripe || stripeObj) return;
-    try {
-      stripeObj = Stripe(STRIPE_PUBLISHABLE_KEY);
-      paymentRequest = stripeObj.paymentRequest({
-        country: 'MX',
-        currency: 'mxn',
-        total: {
-          label: 'Donación ProfesUdG',
-          amount: 2000, // $20.00 MXN por defecto
-        },
-        requestPayerName: false,
-      });
-
-      paymentRequest.canMakePayment().then(function (result) {
-        console.log('[Stripe] canMakePayment:', result);
-      });
-
-      paymentRequest.on('paymentmethod', function (ev) {
-        ev.complete('success');
-        alert('¡Muchas gracias por tu apoyo a ProfesUdG!');
-        closeFullDonationModal();
-      });
-    } catch (err) {
-      console.warn('[Stripe] init info:', err);
-    }
-  }
-
-  /* ── Pop-up de selección de monto ÚNICAMENTE para Google Pay ── */
-  /* ── Manejo de pagos (Google Pay con selector de monto + Apple Pay/Tarjeta) ── */
+  /* ── Manejo de pagos vía Stripe Checkout (Google Pay, Apple Pay y Tarjetas) ── */
   window.triggerPayment = function (method) {
-    if (method === 'google') {
-      openAmountPromptModal();
-      return;
+    if (typeof window.closeFullDonationModal === 'function') {
+      window.closeFullDonationModal();
     }
     openStripePopup();
   };
 
-  let selectedPromptAmount = 20;
-
-  function openAmountPromptModal() {
-    let activeModal = document.getElementById('amtPromptOverlay');
-    if (activeModal) activeModal.remove();
-
-    selectedPromptAmount = 20;
-
-    const div = document.createElement('div');
-    div.id = 'amtPromptOverlay';
-    div.className = 'amt-selector-overlay';
-    div.onclick = function(e) { if(e.target === div) closeAmountPromptModal(); };
-
-    div.innerHTML = `
-      <div class="amt-selector-modal">
-        <button onclick="closeAmountPromptModal()" style="position:absolute;top:14px;right:14px;background:none;border:none;font-size:18px;cursor:pointer;color:#737373;" aria-label="Cerrar"><i class="ti ti-x"></i></button>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;color:#1A73E8;">
-          <i class="ti ti-brand-google" style="font-size:22px;color:#4285F4;"></i>
-          <strong style="font-size:16px;">Donar con Google Pay</strong>
-        </div>
-        <p style="font-size:13px;color:#525252;margin:0 0 14px;">Selecciona el monto que deseas aportar:</p>
-
-        <div class="amt-chips-grid">
-          <button class="amt-chip-btn active" data-amt="20" onclick="selectAmtChip(20, this)">$20 MXN</button>
-          <button class="amt-chip-btn" data-amt="30" onclick="selectAmtChip(30, this)">$30 MXN</button>
-          <button class="amt-chip-btn" data-amt="50" onclick="selectAmtChip(50, this)">$50 MXN</button>
-        </div>
-
-        <input type="number" id="amtCustomInput" class="amt-custom-input" placeholder="Otro monto (ej. 40, 80, 150)..." min="10" max="10000" oninput="clearAmtChips()">
-
-        <div id="amtErrorMsg" style="display:none;color:#DC2626;font-size:12px;font-weight:600;margin:-8px 0 14px;text-align:center;">
-          <i class="ti ti-alert-triangle"></i> El monto mínimo es de $10 MXN y el máximo de $10,000 MXN.
-        </div>
-
-        <button class="amt-confirm-btn" onclick="confirmPaymentWithAmount()">
-          <span>Continuar a Google Pay</span>
-          <i class="ti ti-arrow-right"></i>
-        </button>
-      </div>
-    `;
-
-    document.body.appendChild(div);
-    requestAnimationFrame(() => div.classList.add('show'));
-  }
-
-  window.selectAmtChip = function(amt, btn) {
-    selectedPromptAmount = amt;
-    const inp = document.getElementById('amtCustomInput');
-    const err = document.getElementById('amtErrorMsg');
-    if (inp) inp.value = '';
-    if (err) err.style.display = 'none';
-    document.querySelectorAll('.amt-chip-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  };
-
-  window.clearAmtChips = function() {
-    const err = document.getElementById('amtErrorMsg');
-    if (err) err.style.display = 'none';
-    document.querySelectorAll('.amt-chip-btn').forEach(b => b.classList.remove('active'));
-  };
-
-  window.closeAmountPromptModal = function() {
-    const ov = document.getElementById('amtPromptOverlay');
-    if (!ov) return;
-    ov.classList.remove('show');
-    setTimeout(() => ov.remove(), 200);
-  };
-
-  window.confirmPaymentWithAmount = function() {
-    const inp = document.getElementById('amtCustomInput');
-    const errDiv = document.getElementById('amtErrorMsg');
-    let finalAmount = selectedPromptAmount;
-
-    if (inp && inp.value.trim() !== '') {
-      const customVal = parseFloat(inp.value);
-      if (isNaN(customVal) || customVal < 10 || customVal > 10000) {
-        if (errDiv) errDiv.style.display = 'block';
-        inp.focus();
-        return;
-      }
-      finalAmount = customVal;
+  /* ── Manejo de Ko-fi / PayPal ── */
+  window.onKofiClick = function () {
+    if (typeof window.closeFullDonationModal === 'function') {
+      window.closeFullDonationModal();
     }
-
-    if (errDiv) errDiv.style.display = 'none';
-    closeAmountPromptModal();
-    executeStripePaymentRequest('google', finalAmount);
+    sessionStorage.setItem('pud_kofi_pending', '1');
   };
 
-  function executeStripePaymentRequest(method, amountMxn) {
-    if (!stripeObj && window.Stripe) {
-      stripeObj = Stripe(STRIPE_PUBLISHABLE_KEY);
+  window.addEventListener('focus', function () {
+    if (sessionStorage.getItem('pud_kofi_pending') === '1') {
+      sessionStorage.removeItem('pud_kofi_pending');
+      showDonationThankYouToast();
     }
-
-    if (stripeObj) {
-      try {
-        const pr = stripeObj.paymentRequest({
-          country: 'MX',
-          currency: 'mxn',
-          total: {
-            label: 'Donación ProfesUdG',
-            amount: Math.round(amountMxn * 100),
-          },
-          requestPayerName: false,
-        });
-
-        pr.canMakePayment().then(function (res) {
-          if (res && res.googlePay) {
-            pr.show();
-          } else {
-            openStripePopup();
-          }
-        }).catch(openStripePopup);
-
-        pr.on('paymentmethod', async function (ev) {
-          try {
-            const resp = await fetch('/api/crear-cargo-stripe', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                paymentMethodId: ev.paymentMethod.id,
-                amount: amountMxn
-              })
-            });
-            const data = await resp.json();
-            if (data.success) {
-              ev.complete('success');
-            } else {
-              ev.complete('fail');
-            }
-          } catch (e) {
-            ev.complete('success');
-          }
-
-          if (typeof window.closeFullDonationModal === 'function') {
-            window.closeFullDonationModal();
-          }
-          showDonationThankYouToast();
-        });
-        return;
-      } catch (e) {
-        console.warn('[Stripe] Error:', e);
-      }
-    }
-    openStripePopup();
-  }
+  });
 
   /* ── Ventana elegante de Stripe Checkout ── */
   window.openStripePopup = function () {
@@ -278,6 +115,57 @@
       `width=${w},height=${h},top=${top},left=${left},status=no,toolbar=no,menubar=no,location=no,resizable=yes,scrollbars=yes`
     );
   };
+
+  /* ── Manejo de redirección después del pago exitoso (?donado=1) ── */
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('donado') === '1') {
+    window.history.replaceState({}, document.title, window.location.pathname);
+    if (typeof window.closeFullDonationModal === 'function') {
+      window.closeFullDonationModal();
+    }
+    showDonationThankYouToast();
+  }
+
+  // Listener en la ventana principal para mostrar toast al recibir notificación de pago exitoso
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.type === 'stripe-donation-success') {
+      if (typeof window.closeFullDonationModal === 'function') {
+        window.closeFullDonationModal();
+      }
+      showDonationThankYouToast();
+    }
+  });
+
+  function showDonationThankYouToast() {
+    const existing = document.getElementById('pudThankYouToast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'pudThankYouToast';
+    toast.innerHTML = `
+      <div style="position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#042C53;color:white;padding:14px 24px;border-radius:14px;font-size:14px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,0.25);z-index:99999;display:flex;align-items:center;gap:10px;transition:opacity 0.5s ease;">
+        <span style="font-size:22px;">❤️</span>
+        <span>¡Donación recibida! Muchísimas gracias por apoyar a ProfesUdG.</span>
+      </div>
+    `;
+    const el = toast.firstElementChild;
+    document.body.appendChild(el);
+
+    // Desaparece automáticamente a los 5 segundos
+    setTimeout(() => {
+      if (el && el.parentNode) {
+        el.style.opacity = '0';
+        setTimeout(() => { if (el && el.parentNode) el.remove(); }, 500);
+      }
+    }, 5000);
+  }
+
+  // Contador de clics
+  let clicks = 0;
+  document.addEventListener('click', function () {
+    clicks++;
+    if (clicks === 15) setTimeout(window.showDonationPopup, 500);
+  }, { passive: true });
 
   function injectPopup() {
     if (document.getElementById('donationOverlay')) return;
@@ -469,15 +357,24 @@
   });
 
   function showDonationThankYouToast() {
+    const existing = document.getElementById('pudThankYouToast');
+    if (existing) existing.remove();
+
     const toast = document.createElement('div');
+    toast.id = 'pudThankYouToast';
+    toast.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#042C53;color:white;padding:14px 24px;border-radius:14px;font-size:14px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,0.25);z-index:99999;display:flex;align-items:center;gap:10px;transition:opacity 0.5s ease;opacity:1;';
     toast.innerHTML = `
-      <div style="position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#042C53;color:white;padding:14px 24px;border-radius:14px;font-size:14px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,0.25);z-index:99999;display:flex;align-items:center;gap:10px;">
-        <span style="font-size:22px;">❤️</span>
-        <span>¡Donación recibida! Muchísimas gracias por apoyar a ProfesUdG.</span>
-      </div>
+      <span style="font-size:22px;">❤️</span>
+      <span>¡Donación recibida! Muchísimas gracias por apoyar a ProfesUdG.</span>
     `;
-    document.body.appendChild(toast.firstElementChild);
-    setTimeout(() => { toast.firstElementChild?.remove(); }, 7000);
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      if (toast && toast.parentNode) {
+        toast.style.opacity = '0';
+        setTimeout(() => { if (toast && toast.parentNode) toast.remove(); }, 500);
+      }
+    }, 5000);
   }
 
   // Contador de clics
