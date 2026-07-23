@@ -17,26 +17,53 @@ SMTP_PASS      = os.environ.get('SMTP_PASS') or EMAIL_PASSWORD
 ADMIN_EMAIL    = os.environ.get('ADMIN_EMAIL') or SMTP_USER
 
 def _send_email_thread(to_email, subject, html_body):
-    if not SMTP_USER or not SMTP_PASS or not to_email:
-        print(f"[Email Notification Skipped] to: {to_email} (SMTP_USER or SMTP_PASS not defined in env)")
+    user = os.environ.get('SMTP_USER') or os.environ.get('EMAIL_SENDER', '').strip()
+    passwd = os.environ.get('SMTP_PASS') or os.environ.get('EMAIL_PASSWORD', '').strip()
+    server_host = os.environ.get('SMTP_SERVER', 'smtp.gmail.com').strip()
+    server_port = int(os.environ.get('SMTP_PORT', '587'))
+
+    if not user or not passwd or not to_email:
+        print(f"[Email Notification Skipped] to: {to_email} (SMTP_USER='{user}' or SMTP_PASS configured: {'Sí' if passwd else 'No'})")
         return
+
     try:
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
-        msg['From'] = f"ProfesUdG Soporte <{SMTP_USER}>"
+        msg['From'] = f"ProfesUdG Soporte <{user}>"
         msg['To'] = to_email
 
         part = MIMEText(html_body, 'html', 'utf-8')
         msg.attach(part)
 
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10)
-        server.starttls()
-        server.login(SMTP_USER, SMTP_PASS)
-        server.sendmail(SMTP_USER, [to_email], msg.as_string())
-        server.quit()
-        print(f"[Email Sent Successfully] To: {to_email} | Subject: {subject}")
+        sent = False
+        # Intento 1: Servidor configurado (por defecto 587 TLS)
+        try:
+            if server_port == 465:
+                server = smtplib.SMTP_SSL(server_host, 465, timeout=10)
+            else:
+                server = smtplib.SMTP(server_host, server_port, timeout=10)
+                server.starttls()
+            server.login(user, passwd)
+            server.sendmail(user, [to_email], msg.as_string())
+            server.quit()
+            sent = True
+        except Exception as err1:
+            print(f"[Email Warning] Intento 1 en puerto {server_port} falló ({err1}). Intentando SSL puerto 465...")
+            # Intento 2: Fallback a puerto 465 SSL por si el puerto 587 está bloqueado en el VPS
+            try:
+                server = smtplib.SMTP_SSL(server_host, 465, timeout=10)
+                server.login(user, passwd)
+                server.sendmail(user, [to_email], msg.as_string())
+                server.quit()
+                sent = True
+            except Exception as err2:
+                print(f"[Email Error] Intento 2 en puerto 465 también falló: {err2}")
+                raise err1
+
+        if sent:
+            print(f"[Email Sent Successfully] To: {to_email} | Subject: {subject}")
     except Exception as e:
-        print(f"[Email Error] Failed to send email to {to_email}: {e}")
+        print(f"[Email Error] No se pudo enviar correo a {to_email}: {e}")
 
 def send_email_async(to_email, subject, html_body):
     threading.Thread(target=_send_email_thread, args=(to_email, subject, html_body), daemon=True).start()
@@ -964,8 +991,8 @@ def post_soporte():
     conn.close()
 
     # Notificar al Administrador por Correo
-    if ADMIN_EMAIL or SMTP_USER:
-        dest = ADMIN_EMAIL or SMTP_USER
+    dest = os.environ.get('ADMIN_EMAIL') or os.environ.get('SMTP_USER') or os.environ.get('EMAIL_SENDER')
+    if dest:
         foto_info = f"<p><strong>Imagen adjunta:</strong> <a href='{request.host_url}admin/uploads/{foto_nombre}'>{foto_nombre}</a></p>" if foto_nombre else "<p><em>Sin imagen adjunta</em></p>"
         user_info = f"<a href='mailto:{email}'>{email}</a>" if email else "Anónimo (sin correo)"
         subject = f"[ProfesUdG] Nuevo Ticket de Soporte #{ticket_id}"
@@ -1240,6 +1267,14 @@ def admin_tickets():
     estado = request.args.get('estado', 'all')
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+
+    # Migrar tabla si no existe nota_resolucion
+    try:
+        conn.execute("ALTER TABLE support_tickets ADD COLUMN nota_resolucion TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
     if estado == 'all':
         rows = conn.execute('SELECT * FROM support_tickets ORDER BY created_at DESC').fetchall()
     else:
@@ -1251,14 +1286,25 @@ def admin_tickets():
 @app.route('/admin/api/tickets/<int:tid>/resolve', methods=['POST'])
 @requires_admin
 def admin_resolve_ticket(tid):
+    data = request.json or {}
+    nota_resolucion = data.get('nota_resolucion', '').strip()
+
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+
+    # Migrar columna si no existe
+    try:
+        conn.execute("ALTER TABLE support_tickets ADD COLUMN nota_resolucion TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
     ticket = conn.execute("SELECT * FROM support_tickets WHERE id=?", (tid,)).fetchone()
     if not ticket:
         conn.close()
         return jsonify({'error': 'Ticket no encontrado'}), 404
 
-    conn.execute("UPDATE support_tickets SET estado='resuelto' WHERE id=?", (tid,))
+    conn.execute("UPDATE support_tickets SET estado='resuelto', nota_resolucion=? WHERE id=?", (nota_resolucion, tid))
     conn.commit()
     conn.close()
 
@@ -1266,6 +1312,14 @@ def admin_resolve_ticket(tid):
     user_email = ticket['email'] if dict(ticket).get('email') else None
     if user_email and '@' in user_email:
         subject = f"Tu ticket de soporte #{tid} ha sido resuelto - ProfesUdG"
+        
+        nota_html = f"""
+        <div style="background:#FFFBEB;padding:14px;border-left:4px solid #D97706;border-radius:6px;font-size:14px;color:#92400E;margin:14px 0;">
+          <strong>💬 Comentario de resolución del equipo:</strong><br>
+          {nota_resolucion}
+        </div>
+        """ if nota_resolucion else ""
+
         html_body = f"""
         <div style="font-family:sans-serif;padding:24px;color:#262626;max-width:550px;border:1px solid #e5e5e5;border-radius:12px;">
           <h2 style="color:#0F6E56;margin-top:0;">✅ ¡Tu reporte ha sido resuelto!</h2>
@@ -1274,6 +1328,7 @@ def admin_resolve_ticket(tid):
           <blockquote style="background:#E6F4F1;padding:14px;border-left:4px solid #0F6E56;border-radius:6px;color:#0F6E56;margin:14px 0;white-space:pre-wrap;">
             "{ticket['descripcion']}"
           </blockquote>
+          {nota_html}
           <p>Ha sido revisado y <strong>resuelto con éxito</strong> por nuestro equipo de administración.</p>
           <p>¡Muchas gracias por ayudarnos a mantener ProfesUdG al 100%!</p>
           <hr style="border:none;border-top:1px solid #eee;margin:20px 0;">

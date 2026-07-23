@@ -471,6 +471,19 @@
   </div>
 </div>
 
+<!-- Resolve ticket modal -->
+<div class="edit-overlay" id="resolveOverlay">
+  <div class="edit-modal" style="border-top-color:#0F6E56;">
+    <h3><i class="ti ti-circle-check" style="margin-right:6px;color:#0F6E56;"></i>Resolver ticket #<span id="resolveId"></span></h3>
+    <p style="font-size:13px;color:#525252;margin-bottom:12px;">Escribe un comentario opcional para guardar en el registro y notificar al usuario por correo (si aplica):</p>
+    <textarea id="resolveCommentInput" placeholder="Ej: Ya corregimos el nombre del profesor en la base de datos. ¡Gracias por reportar!"></textarea>
+    <div class="edit-modal-btns">
+      <button class="btn-cancel" onclick="closeResolveModal()">Cancelar</button>
+      <button class="btn-save" style="background:#0F6E56;" onclick="confirmResolveTicket()"><i class="ti ti-check"></i> Confirmar Resolución</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -668,6 +681,8 @@ async function deleteReview(id) {
 }
 
 // Support ticket actions
+let _resolvingTicketId = null;
+
 async function loadTickets() {
   const estado = document.getElementById('ticketFilter').value;
   const body = document.getElementById('ticketsBody');
@@ -685,11 +700,15 @@ async function loadTickets() {
             <span class="badge-v ${t.estado === 'pendiente' ? 'pending' : 'resolved'}">${t.estado}</span>
             <strong style="font-size:14px;color:#042C53;margin-left:10px;">Ticket #${t.id}</strong>
           </div>
-          ${t.estado === 'pendiente' ? `<button class="btn-sm btn-resolve" onclick="resolveTicket(${t.id})"><i class="ti ti-check"></i> Marcar resuelto</button>` : ''}
+          ${t.estado === 'pendiente' ? `<button class="btn-sm btn-resolve" onclick="resolveTicket(${t.id})"><i class="ti ti-check"></i> Resolver</button>` : ''}
         </div>
         <div class="ticket-body-layout">
           <div class="ticket-main-content">
             <div class="ticket-desc">${esc(t.descripcion)}</div>
+            ${t.nota_resolucion ? `
+              <div style="margin-top:10px;background:#F0FDF4;border-left:3px solid #0F6E56;padding:10px 14px;border-radius:6px;font-size:13px;color:#14532D;white-space:pre-wrap;">
+                <strong style="color:#0F6E56;"><i class="ti ti-message-dots"></i> Comentario de resolución:</strong> ${esc(t.nota_resolucion)}
+              </div>` : ''}
             <div class="ticket-meta">
               <span><i class="ti ti-calendar" style="font-size:12px;"></i> ${t.created_at ? t.created_at.slice(0,16) : '—'}</span>
               ${t.email ? `<span><i class="ti ti-mail" style="font-size:12px;"></i> ${esc(t.email)}</span>` : ''}
@@ -705,12 +724,40 @@ async function loadTickets() {
   } catch { showToast('Error al cargar tickets', false); }
 }
 
-async function resolveTicket(id) {
-  try {
-    const r = await fetch(`/admin/api/tickets/${id}/resolve`, { method: 'POST' }).then(r => r.json());
-    if (r.success) { showToast('Ticket marcado como resuelto'); loadTickets(); }
-  } catch { showToast('Error', false); }
+function resolveTicket(id) {
+  _resolvingTicketId = id;
+  document.getElementById('resolveId').textContent = id;
+  document.getElementById('resolveCommentInput').value = '';
+  document.getElementById('resolveOverlay').classList.add('show');
 }
+
+function closeResolveModal() {
+  document.getElementById('resolveOverlay').classList.remove('show');
+  _resolvingTicketId = null;
+}
+
+async function confirmResolveTicket() {
+  if (!_resolvingTicketId) return;
+  const nota = document.getElementById('resolveCommentInput').value.trim();
+  try {
+    const r = await fetch(`/admin/api/tickets/${_resolvingTicketId}/resolve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nota_resolucion: nota })
+    }).then(r => r.json());
+    if (r.success) {
+      showToast('Ticket resuelto correctamente');
+      closeResolveModal();
+      loadTickets();
+    } else {
+      showToast(r.error || 'Error al resolver', false);
+    }
+  } catch { showToast('Error al resolver', false); }
+}
+
+document.getElementById('resolveOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('resolveOverlay')) closeResolveModal();
+});
 
 // Utility functions
 function esc(str) {
