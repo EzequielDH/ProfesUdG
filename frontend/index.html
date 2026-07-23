@@ -13,6 +13,14 @@
     rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css">
   <link rel="stylesheet" href="css/styles.css">
+  <script src="https://js.stripe.com/v3/"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-NP5BQ6PPQQ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-NP5BQ6PPQQ');
+  </script>
 </head>
 
 <body>
@@ -32,6 +40,7 @@
           horario</a>
         <a href="#profes" class="nav-link">Profesores</a>
         <a href="#acerca" class="nav-link">Acerca de</a>
+        <button class="nav-donate-btn" onclick="openDonationModal()"><i class="ti ti-coffee"></i> Donaciones</button>
       </div>
     </div>
   </nav>

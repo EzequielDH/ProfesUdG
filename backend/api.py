@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request, send_from_directory, redirect, session, render_template, url_for, abort
 import pandas as pd
-import glob, os, re, math, sqlite3, hashlib, hmac, secrets, smtplib, json as _json, urllib.request, urllib.error, urllib.parse, uuid
+import glob, os, re, math, sqlite3, hashlib, hmac, secrets, smtplib, threading, json as _json, urllib.request, urllib.error, urllib.parse, uuid
 from functools import wraps
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -10,6 +10,36 @@ from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 EMAIL_SENDER   = os.environ.get('EMAIL_SENDER', '')
 EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD', '')
+SMTP_SERVER    = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
+SMTP_PORT      = int(os.environ.get('SMTP_PORT', '587'))
+SMTP_USER      = os.environ.get('SMTP_USER') or EMAIL_SENDER
+SMTP_PASS      = os.environ.get('SMTP_PASS') or EMAIL_PASSWORD
+ADMIN_EMAIL    = os.environ.get('ADMIN_EMAIL') or SMTP_USER
+
+def _send_email_thread(to_email, subject, html_body):
+    if not SMTP_USER or not SMTP_PASS or not to_email:
+        print(f"[Email Notification Skipped] to: {to_email} (SMTP_USER or SMTP_PASS not defined in env)")
+        return
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = f"ProfesUdG Soporte <{SMTP_USER}>"
+        msg['To'] = to_email
+
+        part = MIMEText(html_body, 'html', 'utf-8')
+        msg.attach(part)
+
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10)
+        server.starttls()
+        server.login(SMTP_USER, SMTP_PASS)
+        server.sendmail(SMTP_USER, [to_email], msg.as_string())
+        server.quit()
+        print(f"[Email Sent Successfully] To: {to_email} | Subject: {subject}")
+    except Exception as e:
+        print(f"[Email Error] Failed to send email to {to_email}: {e}")
+
+def send_email_async(to_email, subject, html_body):
+    threading.Thread(target=_send_email_thread, args=(to_email, subject, html_body), daemon=True).start()
 BASE_URL       = os.environ.get('BASE_URL', 'http://localhost:5001')
 ADMIN_USER     = os.environ.get('user_admin', 'admin')
 ADMIN_PASS     = os.environ.get('pass_admin')
@@ -148,7 +178,9 @@ def _security_headers(resp):
         "img-src 'self' https: data:; "
         "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
-        "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
+        "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://js.stripe.com https://www.googletagmanager.com; "
+        "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://buy.stripe.com; "
+        "connect-src 'self' https://api.stripe.com https://www.google-analytics.com; "
         "frame-ancestors 'none'"
     )
     if _IS_PROD:   # fuerza HTTPS en navegadores durante 1 año
@@ -924,10 +956,34 @@ def post_soporte():
                 foto.save(os.path.join(UPLOADS_DIR, foto_nombre))
 
     conn = sqlite3.connect(DB_PATH)
-    conn.execute('INSERT INTO support_tickets (descripcion, foto_nombre, email) VALUES (?,?,?)',
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO support_tickets (descripcion, foto_nombre, email) VALUES (?,?,?)',
                  (descripcion, foto_nombre, email))
+    ticket_id = cursor.lastrowid
     conn.commit()
     conn.close()
+
+    # Notificar al Administrador por Correo
+    if ADMIN_EMAIL or SMTP_USER:
+        dest = ADMIN_EMAIL or SMTP_USER
+        foto_info = f"<p><strong>Imagen adjunta:</strong> <a href='{request.host_url}admin/uploads/{foto_nombre}'>{foto_nombre}</a></p>" if foto_nombre else "<p><em>Sin imagen adjunta</em></p>"
+        user_info = f"<a href='mailto:{email}'>{email}</a>" if email else "Anónimo (sin correo)"
+        subject = f"[ProfesUdG] Nuevo Ticket de Soporte #{ticket_id}"
+        html_body = f"""
+        <div style="font-family:sans-serif;padding:20px;color:#262626;max-width:550px;border:1px solid #e5e5e5;border-radius:12px;">
+          <h2 style="color:#185FA5;margin-top:0;">📩 Nuevo Ticket de Soporte #{ticket_id}</h2>
+          <p><strong>De:</strong> {user_info}</p>
+          <p><strong>Descripción del reporte:</strong></p>
+          <div style="background:#F0F7FF;padding:14px;border-left:4px solid #185FA5;border-radius:6px;font-size:14px;color:#042C53;margin-bottom:14px;">
+            {descripcion}
+          </div>
+          {foto_info}
+          <hr style="border:none;border-top:1px solid #eee;margin:20px 0;">
+          <p style="font-size:12px;color:#737373;margin:0;">Sistema de Notificaciones ProfesUdG</p>
+        </div>
+        """
+        send_email_async(dest, subject, html_body)
+
     return jsonify({'success': True})
 
 # Routes: Google OAuth
@@ -1196,9 +1252,36 @@ def admin_tickets():
 @requires_admin
 def admin_resolve_ticket(tid):
     conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    ticket = conn.execute("SELECT * FROM support_tickets WHERE id=?", (tid,)).fetchone()
+    if not ticket:
+        conn.close()
+        return jsonify({'error': 'Ticket no encontrado'}), 404
+
     conn.execute("UPDATE support_tickets SET estado='resuelto' WHERE id=?", (tid,))
     conn.commit()
     conn.close()
+
+    # Notificar al Usuario si proporcionó su correo al crear el ticket
+    user_email = ticket['email'] if dict(ticket).get('email') else None
+    if user_email and '@' in user_email:
+        subject = f"Tu ticket de soporte #{tid} ha sido resuelto - ProfesUdG"
+        html_body = f"""
+        <div style="font-family:sans-serif;padding:24px;color:#262626;max-width:550px;border:1px solid #e5e5e5;border-radius:12px;">
+          <h2 style="color:#0F6E56;margin-top:0;">✅ ¡Tu reporte ha sido resuelto!</h2>
+          <p>Hola,</p>
+          <p>Te informamos que tu reporte en <strong>ProfesUdG</strong> con la siguiente descripción:</p>
+          <blockquote style="background:#E6F4F1;padding:14px;border-left:4px solid #0F6E56;border-radius:6px;color:#0F6E56;margin:14px 0;white-space:pre-wrap;">
+            "{ticket['descripcion']}"
+          </blockquote>
+          <p>Ha sido revisado y <strong>resuelto con éxito</strong> por nuestro equipo de administración.</p>
+          <p>¡Muchas gracias por ayudarnos a mantener ProfesUdG al 100%!</p>
+          <hr style="border:none;border-top:1px solid #eee;margin:20px 0;">
+          <p style="font-size:12px;color:#737373;margin:0;">Atentamente,<br><strong>Equipo ProfesUdG</strong></p>
+        </div>
+        """
+        send_email_async(user_email, subject, html_body)
+
     return jsonify({'success': True})
 
 # Main Entry Point

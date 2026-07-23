@@ -15,6 +15,13 @@
 
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/horario.css">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-NP5BQ6PPQQ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-NP5BQ6PPQQ');
+  </script>
 </head>
 
 <body>
@@ -33,6 +40,7 @@
         <a href="/construir-horario" class="nav-link nav-active">Construir horario</a>
         <a href="/#profes" class="nav-link">Profesores</a>
         <a href="/#acerca" class="nav-link">Acerca de</a>
+        <button class="nav-donate-btn" onclick="openDonationModal()"><i class="ti ti-coffee"></i> Donaciones</button>
       </div>
     </div>
   </nav>
@@ -187,6 +195,7 @@
     </div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="js/horario.js"></script>
   <script src="js/donation.js"></script>
   <script>
