@@ -8,14 +8,6 @@ from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 # Config
 
-EMAIL_SENDER   = os.environ.get('EMAIL_SENDER', '')
-EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD', '')
-SMTP_SERVER    = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
-SMTP_PORT      = int(os.environ.get('SMTP_PORT', '587'))
-SMTP_USER      = os.environ.get('SMTP_USER') or EMAIL_SENDER
-SMTP_PASS      = os.environ.get('SMTP_PASS') or EMAIL_PASSWORD
-ADMIN_EMAIL    = os.environ.get('ADMIN_EMAIL') or SMTP_USER
-
 def _send_email_thread(to_email, subject, html_body):
     user = os.environ.get('SMTP_USER') or os.environ.get('EMAIL_SENDER', '').strip()
     passwd = os.environ.get('SMTP_PASS') or os.environ.get('EMAIL_PASSWORD', '').strip()
@@ -289,6 +281,10 @@ def init_db():
             conn.execute(f'ALTER TABLE reviews ADD COLUMN {col}')
         except Exception:
             pass
+    try:
+        conn.execute("ALTER TABLE support_tickets ADD COLUMN nota_resolucion TEXT")
+    except Exception:
+        pass
     try:
         conn.execute("UPDATE reviews SET email_hash = NULL WHERE email_hash LIKE 'ip:%'")
     except Exception:
@@ -1291,13 +1287,6 @@ def admin_tickets():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
 
-    # Migrar tabla si no existe nota_resolucion
-    try:
-        conn.execute("ALTER TABLE support_tickets ADD COLUMN nota_resolucion TEXT")
-        conn.commit()
-    except sqlite3.OperationalError:
-        pass
-
     if estado == 'all':
         rows = conn.execute('SELECT * FROM support_tickets ORDER BY created_at DESC').fetchall()
     else:
@@ -1314,13 +1303,6 @@ def admin_resolve_ticket(tid):
 
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-
-    # Migrar columna si no existe
-    try:
-        conn.execute("ALTER TABLE support_tickets ADD COLUMN nota_resolucion TEXT")
-        conn.commit()
-    except sqlite3.OperationalError:
-        pass
 
     ticket = conn.execute("SELECT * FROM support_tickets WHERE id=?", (tid,)).fetchone()
     if not ticket:
