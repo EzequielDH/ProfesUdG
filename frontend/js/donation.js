@@ -1,6 +1,6 @@
 (function () {
   const STORAGE_KEY = 'pud_donation';
-  const COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+  const COOLDOWN_MS = 1 * 24 * 60 * 60 * 1000; // Cada 24 horas
   const KOFI_URL = 'https://ko-fi.com/profesudg';
   const STRIPE_LINK = 'https://buy.stripe.com/fZu9ALfPR2KOb3S3PF43S00';
   const STRIPE_PUBLISHABLE_KEY = 'pk_live_51Tsx4218OJBs5K1fhV8zPlMgrTl6PWemMEqvqxTWbBgpVRc97t4dbhb0dmk8OShkAQoUD5roa5LyltRsdYoH6L7K00hzy1OB01';
@@ -506,7 +506,7 @@
   let clicks = 0;
   document.addEventListener('click', function () {
     clicks++;
-    if (clicks === 25) setTimeout(window.showDonationPopup, 600);
+    if (clicks === 8) setTimeout(window.showDonationPopup, 500);
   }, { passive: true });
 })();
 
