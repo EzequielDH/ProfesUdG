@@ -133,14 +133,21 @@ if os.environ.get('TRUST_PROXY') == '1':
     from werkzeug.middleware.proxy_fix import ProxyFix
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
+from flask import has_request_context
+
 def _client_ip():
-    if request.headers.getlist("X-Forwarded-For"):
-        return request.headers.getlist("X-Forwarded-For")[0].split(',')[0].strip()
-    return get_remote_address()
+    try:
+        if has_request_context():
+            if request.headers.getlist("X-Forwarded-For"):
+                return request.headers.getlist("X-Forwarded-For")[0].split(',')[0].strip()
+            return get_remote_address()
+    except Exception:
+        pass
+    return "127.0.0.1"
 
 # Rate limiting — limita peticiones por IP real para frenar spam y DoS
 from flask_limiter import Limiter
-limiter = Limiter(_client_ip, app=app, default_limits=["10000 per hour"])
+limiter = Limiter(key_func=_client_ip, app=app, default_limits=["10000 per hour"])
 
 def _throttle_ok(key, max_hits, window_seconds):
     """True si la acción se permite; False si supera el límite en la ventana."""
