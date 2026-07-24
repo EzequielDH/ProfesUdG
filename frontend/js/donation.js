@@ -84,60 +84,8 @@
 
   /* ── Manejo de pagos vía Stripe Checkout (Google Pay, Apple Pay y Tarjetas) ── */
   window.triggerPayment = function (method) {
-    if (method === 'apple') {
-      const isAppleDevice = /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      if (!stripeObj && window.Stripe) {
-        stripeObj = Stripe(STRIPE_PUBLISHABLE_KEY);
-      }
-      if (isAppleDevice && stripeObj) {
-        try {
-          const pr = stripeObj.paymentRequest({
-            country: 'MX',
-            currency: 'mxn',
-            total: { label: 'Donación ProfesUdG', amount: 2000 },
-            requestPayerName: false,
-          });
-          pr.canMakePayment().then(function (res) {
-            if (res && res.applePay) {
-              pr.show();
-            } else {
-              openStripePopup();
-            }
-          }).catch(openStripePopup);
-
-          pr.on('paymentmethod', async function (ev) {
-            try {
-              const resp = await fetch('/api/crear-cargo-stripe', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  paymentMethodId: ev.paymentMethod.id,
-                  amount: 20
-                })
-              });
-              const data = await resp.json();
-              if (data.success) {
-                ev.complete('success');
-                if (typeof window.closeFullDonationModal === 'function') {
-                  window.closeFullDonationModal();
-                }
-                showDonationThankYouToast();
-              } else {
-                ev.complete('fail');
-                alert('Error procesando el pago: ' + (data.error || 'Intenta con otro método.'));
-              }
-            } catch (e) {
-              ev.complete('fail');
-              alert('Error de conexión. Intenta de nuevo.');
-            }
-          });
-          return;
-        } catch (e) {
-          console.warn('[Stripe ApplePay Error]:', e);
-        }
-      }
-      openStripePopup();
-      return;
+    if (typeof window.closeFullDonationModal === 'function') {
+      window.closeFullDonationModal();
     }
 
     if (method === 'card') {
@@ -145,29 +93,36 @@
       return;
     }
 
-    // Abrir mini pop-up de monto ÚNICAMENTE para Google Pay
-    openAmountPromptModal();
+    // Google Pay y Apple Pay
+    openAmountPromptModal(method);
   };
 
   let selectedPromptAmount = 20;
+  let currentPromptMethod = 'google';
 
-  function openAmountPromptModal() {
+  function openAmountPromptModal(method = 'google') {
     let activeModal = document.getElementById('amtPromptOverlay');
     if (activeModal) activeModal.remove();
 
     selectedPromptAmount = 20;
+    currentPromptMethod = method;
 
     const div = document.createElement('div');
     div.id = 'amtPromptOverlay';
     div.className = 'amt-selector-overlay';
     div.onclick = function(e) { if(e.target === div) closeAmountPromptModal(); };
 
+    const isApple = method === 'apple';
+    const iconClass = isApple ? 'ti-brand-apple' : 'ti-brand-google';
+    const iconColor = isApple ? '#000000' : '#4285F4';
+    const titleText = isApple ? 'Donar con Apple Pay' : 'Donar con Google Pay';
+
     div.innerHTML = `
       <div class="amt-selector-modal">
         <button onclick="closeAmountPromptModal()" style="position:absolute;top:14px;right:14px;background:none;border:none;font-size:18px;cursor:pointer;color:#737373;" aria-label="Cerrar"><i class="ti ti-x"></i></button>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;color:#1A73E8;">
-          <i class="ti ti-brand-google" style="font-size:22px;color:#4285F4;"></i>
-          <strong style="font-size:16px;">Donar con Google Pay</strong>
+          <i class="ti ${iconClass}" style="font-size:22px;color:${iconColor};"></i>
+          <strong style="font-size:16px; color:${isApple ? '#000' : ''}">${titleText}</strong>
         </div>
         <p style="font-size:13px;color:#525252;margin:0 0 14px;">Selecciona el monto que deseas aportar:</p>
 
@@ -183,8 +138,8 @@
           <i class="ti ti-alert-triangle"></i> El monto mínimo es de $10 MXN y el máximo de $10,000 MXN.
         </div>
 
-        <button class="amt-confirm-btn" onclick="confirmPaymentWithAmount()">
-          <span>Continuar a Google Pay</span>
+        <button class="amt-confirm-btn" onclick="confirmPaymentWithAmount()" style="${isApple ? 'background:#000;border-color:#000;' : ''}">
+          <span>Continuar a ${isApple ? 'Apple Pay' : 'Google Pay'}</span>
           <i class="ti ti-arrow-right"></i>
         </button>
       </div>
@@ -234,7 +189,7 @@
 
     if (errDiv) errDiv.style.display = 'none';
     closeAmountPromptModal();
-    executeStripePaymentRequest('google', finalAmount);
+    executeStripePaymentRequest(currentPromptMethod, finalAmount);
   };
 
   function executeStripePaymentRequest(method, amountMxn) {
@@ -254,12 +209,13 @@
           requestPayerName: false,
         });
 
-        const isAppleDevice = /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
         pr.canMakePayment().then(function (res) {
-          if (res && ((method === 'apple' && res.applePay && isAppleDevice) || (method === 'google' && res.googlePay) || res.applePay || res.googlePay)) {
+          if (res && ((method === 'apple' && res.applePay) || (method === 'google' && res.googlePay))) {
             pr.show();
           } else {
+            if (method === 'apple') {
+              alert('Apple Pay nativo requiere usar Safari en un dispositivo Apple (iPhone, iPad o Mac). Te redirigiremos a la pasarela principal de Stripe.');
+            }
             openStripePopup();
           }
         }).catch(openStripePopup);
