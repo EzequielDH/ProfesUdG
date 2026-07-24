@@ -400,6 +400,12 @@ select.form-control {
   .tool-params { padding: 16px 14px; border-radius: 14px; }
   .radio-group { flex-wrap: wrap; gap: 6px; }
 
+  /* Compact Placeholder */
+  .tool-results { min-height: auto; }
+  .results-placeholder { padding: 30px 16px; gap: 6px; }
+  .results-placeholder i { font-size: 28px; }
+  .results-placeholder p { font-size: 13px; }
+
   /* Results table: horizontal scroll */
   .schedule-option { padding: 14px 10px; border-radius: 14px; margin-bottom: 16px; }
   .opt-label { font-size: 15px; }
